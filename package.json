@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "build:mcp": "tsc mcp-server.ts --outDir dist --module nodenext --moduleResolution nodenext && chmod 755 dist/mcp-server.js",
+    "build:mcp": "tsc --project tsconfig.mcp.json && chmod 755 dist/mcp-server.js",
     "start": "next start",
     "start:mcp": "node dist/mcp-server.js",
     "dev:mcp": "tsx mcp-server.ts",

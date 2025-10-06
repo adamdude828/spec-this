@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, epics } from "../../db";
-import type { ToolDefinition } from "../types/tool";
+import { db, epics } from "../../db/index.js";
+import type { ToolDefinition } from "../types/tool.js";
 
 const upsertEpicSchema = z.object({
   id: z.string().uuid().optional().describe("Epic ID for update, omit for insert"),

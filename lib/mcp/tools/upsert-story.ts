@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, stories } from "../../db";
-import type { ToolDefinition } from "../types/tool";
+import { db, stories } from "../../db/index.js";
+import type { ToolDefinition } from "../types/tool.js";
 
 const upsertStorySchema = z.object({
   id: z.string().uuid().optional().describe("Story ID for update, omit for insert"),
