@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "spec-this": {
+      "command": "npm",
+      "args": ["run", "dev:mcp"]
+    }
+  }
+}
