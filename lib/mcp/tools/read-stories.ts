@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
-import { db, stories } from "../../db/index.js";
-import type { ToolDefinition } from "../types/tool.js";
+import { db, stories } from "../../db/index.ts";
+import type { ToolDefinition } from "../types/tool.ts";
 
 const readStoriesSchema = z.object({
   id: z.string().uuid().optional().describe("Optional story ID to fetch a specific story"),

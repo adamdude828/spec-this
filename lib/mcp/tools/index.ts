@@ -1,10 +1,10 @@
-import type { ToolDefinition } from "../types/tool.js";
-import { readEpicsTool } from "./read-epics.js";
-import { upsertEpicTool } from "./upsert-epic.js";
-import { readStoriesTool } from "./read-stories.js";
-import { upsertStoryTool } from "./upsert-story.js";
-import { readTasksTool } from "./read-tasks.js";
-import { upsertTaskTool } from "./upsert-task.js";
+import type { ToolDefinition } from "../types/tool.ts";
+import { readEpicsTool } from "./read-epics.ts";
+import { upsertEpicTool } from "./upsert-epic.ts";
+import { readStoriesTool } from "./read-stories.ts";
+import { upsertStoryTool } from "./upsert-story.ts";
+import { readTasksTool } from "./read-tasks.ts";
+import { upsertTaskTool } from "./upsert-task.ts";
 
 export const allTools: ToolDefinition[] = [
   readEpicsTool,
@@ -15,9 +15,9 @@ export const allTools: ToolDefinition[] = [
   upsertTaskTool,
 ];
 
-export * from "./read-epics.js";
-export * from "./upsert-epic.js";
-export * from "./read-stories.js";
-export * from "./upsert-story.js";
-export * from "./read-tasks.js";
-export * from "./upsert-task.js";
+export * from "./read-epics.ts";
+export * from "./upsert-epic.ts";
+export * from "./read-stories.ts";
+export * from "./upsert-story.ts";
+export * from "./read-tasks.ts";
+export * from "./upsert-task.ts";

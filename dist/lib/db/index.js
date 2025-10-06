@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from './schema.js';
+import * as schema from "./schema.js";
 let _db = null;
 function initDb() {
     if (!_db) {
@@ -20,4 +20,4 @@ export const db = new Proxy({}, {
     }
 });
 // Export schema and types
-export * from './schema.js';
+export * from "./schema.js";

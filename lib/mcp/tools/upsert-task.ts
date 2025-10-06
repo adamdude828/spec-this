@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, tasks } from "../../db/index.js";
-import type { ToolDefinition } from "../types/tool.js";
+import { db, tasks } from "../../db/index.ts";
+import type { ToolDefinition } from "../types/tool.ts";
 
 const upsertTaskSchema = z.object({
   id: z.string().uuid().optional().describe("Task ID for update, omit for insert"),

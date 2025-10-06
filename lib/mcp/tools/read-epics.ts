@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, epics } from "../../db/index.js";
-import type { ToolDefinition } from "../types/tool.js";
+import { db, epics } from "../../db/index.ts";
+import type { ToolDefinition } from "../types/tool.ts";
 
 const readEpicsSchema = z.object({
   id: z.string().uuid().optional().describe("Optional epic ID to fetch a specific epic"),
