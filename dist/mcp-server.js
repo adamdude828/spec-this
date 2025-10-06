@@ -1,33 +1,27 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import { allTools } from "./lib/mcp/tools/index.js";
+import * as dotenv from "dotenv";
+// Load environment variables
+dotenv.config({ path: ".env.local" });
 async function main() {
     const server = new McpServer({
         name: "spec-this-mcp-server",
-        description: "MCP server for spec-this application",
+        description: "MCP server for spec-driven development tool",
         version: "1.0.0",
         capabilities: {
             tools: {},
         },
     });
-    // Register the echo tool
-    server.tool("echo", "Echoes back the provided message", {
-        message: z.string().describe("The message to echo back"),
-    }, async ({ message }) => {
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `Echo: ${message}`,
-                },
-            ],
-        };
-    });
+    // Register all tools from the registry
+    for (const tool of allTools) {
+        server.tool(tool.name, tool.description, tool.schema.shape, async (args) => tool.handler(args));
+    }
     // Use stdio transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("spec-this MCP Server running on stdio");
+    console.error(`spec-this MCP Server running on stdio with ${allTools.length} tools`);
 }
 main().catch((error) => {
     console.error("Fatal error:", error);

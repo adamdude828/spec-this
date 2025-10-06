@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, epics } from "../../db";
-import type { ToolDefinition } from "../types/tool";
+import { db, epics } from "../../db/index.ts";
+import type { ToolDefinition } from "../types/tool.ts";
 
 const upsertEpicSchema = z.object({
   id: z.string().uuid().optional().describe("Epic ID for update, omit for insert"),
@@ -20,7 +20,7 @@ export const upsertEpicTool: ToolDefinition = {
     try {
       if (params.id) {
         // Update existing epic
-        const updateData: any = {
+        const updateData: Partial<typeof epics.$inferInsert> = {
           updatedAt: new Date(),
         };
 
@@ -53,7 +53,7 @@ export const upsertEpicTool: ToolDefinition = {
         };
       } else {
         // Insert new epic
-        const insertData: any = {
+        const insertData: typeof epics.$inferInsert = {
           title: params.title,
         };
 

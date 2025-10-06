@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from './schema';
+import * as schema from './schema.ts';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 let _db: PostgresJsDatabase<typeof schema> | null = null;
@@ -18,11 +18,11 @@ function initDb() {
 
 // Lazy-loaded database instance
 export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
-  get(target, prop) {
+  get(_target, prop) {
     const database = initDb();
-    return (database as any)[prop];
+    return database[prop as keyof PostgresJsDatabase<typeof schema>];
   }
 });
 
 // Export schema and types
-export * from './schema';
+export * from './schema.ts';

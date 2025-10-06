@@ -20,7 +20,12 @@ async function main() {
 
   // Register all tools from the registry
   for (const tool of allTools) {
-    server.tool(tool.name, tool.description, tool.schema.shape, tool.handler);
+    server.tool(
+      tool.name,
+      tool.description,
+      tool.schema.shape,
+      async (args) => tool.handler(args as never)
+    );
   }
 
   // Use stdio transport

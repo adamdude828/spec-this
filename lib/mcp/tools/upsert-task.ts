@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, tasks } from "../../db";
-import type { ToolDefinition } from "../types/tool";
+import { db, tasks } from "../../db/index.ts";
+import type { ToolDefinition } from "../types/tool.ts";
 
 const upsertTaskSchema = z.object({
   id: z.string().uuid().optional().describe("Task ID for update, omit for insert"),
@@ -23,7 +23,7 @@ export const upsertTaskTool: ToolDefinition = {
     try {
       if (params.id) {
         // Update existing task
-        const updateData: any = {
+        const updateData: Partial<typeof tasks.$inferInsert> = {
           updatedAt: new Date(),
         };
 
@@ -59,7 +59,7 @@ export const upsertTaskTool: ToolDefinition = {
         };
       } else {
         // Insert new task
-        const insertData: any = {
+        const insertData: typeof tasks.$inferInsert = {
           storyId: params.storyId,
           title: params.title,
         };

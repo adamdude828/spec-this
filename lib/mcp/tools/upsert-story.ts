@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, stories } from "../../db";
-import type { ToolDefinition } from "../types/tool";
+import { db, stories } from "../../db/index.ts";
+import type { ToolDefinition } from "../types/tool.ts";
 
 const upsertStorySchema = z.object({
   id: z.string().uuid().optional().describe("Story ID for update, omit for insert"),
@@ -23,7 +23,7 @@ export const upsertStoryTool: ToolDefinition = {
     try {
       if (params.id) {
         // Update existing story
-        const updateData: any = {
+        const updateData: Partial<typeof stories.$inferInsert> = {
           updatedAt: new Date(),
         };
 
@@ -59,7 +59,7 @@ export const upsertStoryTool: ToolDefinition = {
         };
       } else {
         // Insert new story
-        const insertData: any = {
+        const insertData: typeof stories.$inferInsert = {
           epicId: params.epicId,
           title: params.title,
         };

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
-import { db, tasks } from "../../db";
-import type { ToolDefinition } from "../types/tool";
+import { db, tasks } from "../../db/index.ts";
+import type { ToolDefinition } from "../types/tool.ts";
 
 const readTasksSchema = z.object({
   id: z.string().uuid().optional().describe("Optional task ID to fetch a specific task"),
