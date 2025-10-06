@@ -23,7 +23,7 @@ export const upsertTaskTool: ToolDefinition = {
     try {
       if (params.id) {
         // Update existing task
-        const updateData: any = {
+        const updateData: Partial<typeof tasks.$inferInsert> = {
           updatedAt: new Date(),
         };
 
@@ -59,7 +59,7 @@ export const upsertTaskTool: ToolDefinition = {
         };
       } else {
         // Insert new task
-        const insertData: any = {
+        const insertData: typeof tasks.$inferInsert = {
           storyId: params.storyId,
           title: params.title,
         };

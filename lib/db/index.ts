@@ -18,9 +18,9 @@ function initDb() {
 
 // Lazy-loaded database instance
 export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
-  get(target, prop) {
+  get(_target, prop) {
     const database = initDb();
-    return (database as any)[prop];
+    return database[prop as keyof PostgresJsDatabase<typeof schema>];
   }
 });
 

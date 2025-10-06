@@ -20,7 +20,7 @@ export const upsertEpicTool: ToolDefinition = {
     try {
       if (params.id) {
         // Update existing epic
-        const updateData: any = {
+        const updateData: Partial<typeof epics.$inferInsert> = {
           updatedAt: new Date(),
         };
 
@@ -53,7 +53,7 @@ export const upsertEpicTool: ToolDefinition = {
         };
       } else {
         // Insert new epic
-        const insertData: any = {
+        const insertData: typeof epics.$inferInsert = {
           title: params.title,
         };
 

@@ -23,7 +23,7 @@ export const upsertStoryTool: ToolDefinition = {
     try {
       if (params.id) {
         // Update existing story
-        const updateData: any = {
+        const updateData: Partial<typeof stories.$inferInsert> = {
           updatedAt: new Date(),
         };
 
@@ -59,7 +59,7 @@ export const upsertStoryTool: ToolDefinition = {
         };
       } else {
         // Insert new story
-        const insertData: any = {
+        const insertData: typeof stories.$inferInsert = {
           epicId: params.epicId,
           title: params.title,
         };

@@ -58,7 +58,7 @@ describe('upsertEpicTool', () => {
     const mockUpdate = {
       set: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      returning: vi.fn().mockResolvedValue([{ id: epicId, ...updateData }]),
+      returning: vi.fn().mockResolvedValue([{ ...updateData }]),
     };
 
     (dbModule.db.update as any).mockReturnValue(mockUpdate);
