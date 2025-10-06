@@ -17,8 +17,27 @@ const eslintConfig = [
       ".next/**",
       "out/**",
       "build/**",
+      "dist/**",
+      "drizzle/**",
       "next-env.d.ts",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "vitest.config.ts",
+      "vitest.setup.ts",
     ],
+  },
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/no-explicit-any": "warn",
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+    },
   },
 ];
 
