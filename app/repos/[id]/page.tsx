@@ -225,7 +225,7 @@ export default function RepoDetailPage({
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No epics</h3>
             <p className="mt-1 text-sm text-gray-500">
-              This repository doesn't have any epics yet
+              This repository doesn&apos;t have any epics yet
             </p>
           </div>
         ) : (

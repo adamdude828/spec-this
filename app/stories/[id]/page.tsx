@@ -200,7 +200,7 @@ export default function StoryDetailPage({
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No tasks</h3>
             <p className="mt-1 text-sm text-gray-500">
-              This story doesn't have any tasks yet
+              This story doesn&apos;t have any tasks yet
             </p>
           </div>
         ) : (
