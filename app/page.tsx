@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import EpicCard from './components/EpicCard';
 
 interface Epic {
@@ -11,20 +15,45 @@ interface Epic {
   createdBy: string | null;
 }
 
-async function getEpics(): Promise<Epic[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/epics`, {
-    cache: 'no-store',
-  });
+export default function Home() {
+  const router = useRouter();
+  const [epics, setEpics] = useState<Epic[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch epics');
+  const fetchEpics = async () => {
+    try {
+      const res = await fetch('/api/epics', {
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch epics');
+      }
+
+      const data = await res.json();
+      setEpics(data);
+    } catch (error) {
+      console.error('Error fetching epics:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEpics();
+  }, []);
+
+  const handleEpicUpdate = () => {
+    fetchEpics();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
   }
-
-  return res.json();
-}
-
-export default async function Home() {
-  const epics = await getEpics();
 
   return (
     <div>
@@ -66,6 +95,7 @@ export default async function Home() {
               status={epic.status}
               priority={epic.priority}
               createdAt={epic.createdAt}
+              onUpdate={handleEpicUpdate}
             />
           ))}
         </div>

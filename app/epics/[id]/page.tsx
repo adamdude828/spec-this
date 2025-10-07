@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import StoryCard from '@/app/components/StoryCard';
+import EditEpicModal from '@/app/components/EditEpicModal';
 
 interface Epic {
   id: string;
@@ -40,39 +44,66 @@ const priorityColors: Record<string, string> = {
   critical: 'bg-purple-100 text-purple-800',
 };
 
-async function getEpic(id: string): Promise<Epic> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/epics/${id}`,
-    { cache: 'no-store' }
-  );
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch epic');
-  }
-
-  return res.json();
-}
-
-async function getStories(epicId: string): Promise<Story[]> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/stories?epicId=${epicId}`,
-    { cache: 'no-store' }
-  );
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch stories');
-  }
-
-  return res.json();
-}
-
-export default async function EpicDetailPage({
+export default function EpicDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const [epic, stories] = await Promise.all([getEpic(id), getStories(id)]);
+  const [id, setId] = useState<string>('');
+  const [epic, setEpic] = useState<Epic | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    params.then((p) => setId(p.id));
+  }, [params]);
+
+  const fetchData = async () => {
+    if (!id) return;
+
+    try {
+      const [epicRes, storiesRes] = await Promise.all([
+        fetch(`/api/epics/${id}`, { cache: 'no-store' }),
+        fetch(`/api/stories?epicId=${id}`, { cache: 'no-store' }),
+      ]);
+
+      if (!epicRes.ok || !storiesRes.ok) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const epicData = await epicRes.json();
+      const storiesData = await storiesRes.json();
+
+      setEpic(epicData);
+      setStories(storiesData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
+
+  const handleStoryUpdate = () => {
+    fetchData();
+  };
+
+  const [isEditEpicModalOpen, setIsEditEpicModalOpen] = useState(false);
+
+  const handleEpicUpdate = () => {
+    fetchData();
+  };
+
+  if (isLoading || !epic) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   const formattedCreated = new Date(epic.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -117,7 +148,16 @@ export default async function EpicDetailPage({
       <div className="bg-white rounded-lg shadow p-6 mb-6 border border-gray-200">
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900 flex-1">{epic.title}</h1>
-          <div className="flex gap-2 ml-4">
+          <div className="flex gap-2 ml-4 items-center">
+            <button
+              onClick={() => setIsEditEpicModalOpen(true)}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+              title="Edit epic"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                 statusColors[epic.status] || statusColors.draft
@@ -188,14 +228,23 @@ export default async function EpicDetailPage({
                   id={story.id}
                   title={story.title}
                   description={story.description}
+                  acceptanceCriteria={story.acceptanceCriteria}
                   status={story.status}
                   priority={story.priority}
                   storyPoints={story.storyPoints}
+                  onUpdate={handleStoryUpdate}
                 />
               ))}
           </div>
         )}
       </div>
+
+      <EditEpicModal
+        epic={{ id: epic.id, title: epic.title, description: epic.description, status: epic.status, priority: epic.priority }}
+        isOpen={isEditEpicModalOpen}
+        onClose={() => setIsEditEpicModalOpen(false)}
+        onSave={handleEpicUpdate}
+      />
     </div>
   );
 }

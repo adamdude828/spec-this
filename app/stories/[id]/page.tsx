@@ -1,5 +1,9 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Breadcrumb from '@/app/components/Breadcrumb';
 import TaskCard from '@/app/components/TaskCard';
+import EditStoryModal from '@/app/components/EditStoryModal';
 
 interface Story {
   id: string;
@@ -49,56 +53,72 @@ const priorityColors: Record<string, string> = {
   critical: 'bg-purple-100 text-purple-800',
 };
 
-async function getStory(id: string): Promise<Story> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/stories/${id}`,
-    { cache: 'no-store' }
-  );
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch story');
-  }
-
-  return res.json();
-}
-
-async function getTasks(storyId: string): Promise<Task[]> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tasks?storyId=${storyId}`,
-    { cache: 'no-store' }
-  );
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch tasks');
-  }
-
-  return res.json();
-}
-
-async function getEpic(id: string): Promise<Epic> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/epics/${id}`,
-    { cache: 'no-store' }
-  );
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch epic');
-  }
-
-  return res.json();
-}
-
-export default async function StoryDetailPage({
+export default function StoryDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const story = await getStory(id);
-  const [tasks, epic] = await Promise.all([
-    getTasks(id),
-    getEpic(story.epicId),
-  ]);
+  const [id, setId] = useState<string>('');
+  const [story, setStory] = useState<Story | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [epic, setEpic] = useState<Epic | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    params.then((p) => setId(p.id));
+  }, [params]);
+
+  const fetchData = async () => {
+    if (!id) return;
+
+    try {
+      const storyRes = await fetch(`/api/stories/${id}`, { cache: 'no-store' });
+      if (!storyRes.ok) throw new Error('Failed to fetch story');
+      const storyData = await storyRes.json();
+
+      const [tasksRes, epicRes] = await Promise.all([
+        fetch(`/api/tasks?storyId=${id}`, { cache: 'no-store' }),
+        fetch(`/api/epics/${storyData.epicId}`, { cache: 'no-store' }),
+      ]);
+
+      if (!tasksRes.ok || !epicRes.ok) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const tasksData = await tasksRes.json();
+      const epicData = await epicRes.json();
+
+      setStory(storyData);
+      setTasks(tasksData);
+      setEpic(epicData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
+
+  const handleTaskUpdate = () => {
+    fetchData();
+  };
+
+  const [isEditStoryModalOpen, setIsEditStoryModalOpen] = useState(false);
+
+  const handleStoryUpdate = () => {
+    fetchData();
+  };
+
+  if (isLoading || !story || !epic) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -115,7 +135,16 @@ export default async function StoryDetailPage({
       <div className="bg-white rounded-lg shadow p-6 mb-6 border border-gray-200">
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900 flex-1">{story.title}</h1>
-          <div className="flex gap-2 ml-4">
+          <div className="flex gap-2 ml-4 items-center">
+            <button
+              onClick={() => setIsEditStoryModalOpen(true)}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+              title="Edit story"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                 statusColors[story.status] || statusColors.draft
@@ -191,16 +220,25 @@ export default async function StoryDetailPage({
               .map((task) => (
                 <TaskCard
                   key={task.id}
+                  id={task.id}
                   title={task.title}
                   description={task.description}
                   status={task.status}
                   estimatedHours={task.estimatedHours}
                   actualHours={task.actualHours}
+                  onUpdate={handleTaskUpdate}
                 />
               ))}
           </div>
         )}
       </div>
+
+      <EditStoryModal
+        story={{ id: story.id, title: story.title, description: story.description, acceptanceCriteria: story.acceptanceCriteria, status: story.status, priority: story.priority, storyPoints: story.storyPoints }}
+        isOpen={isEditStoryModalOpen}
+        onClose={() => setIsEditStoryModalOpen(false)}
+        onSave={handleStoryUpdate}
+      />
     </div>
   );
 }
