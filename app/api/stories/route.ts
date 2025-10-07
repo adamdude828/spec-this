@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { stories } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+
+type StoryStatus = 'draft' | 'ready' | 'in_progress' | 'review' | 'completed';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,12 +16,14 @@ export async function GET(request: NextRequest) {
       result = await db
         .select()
         .from(stories)
-        .where(eq(stories.epicId, epicId))
-        .where(eq(stories.status, status));
+        .where(and(
+          eq(stories.epicId, epicId),
+          eq(stories.status, status as StoryStatus)
+        ));
     } else if (epicId) {
       result = await db.select().from(stories).where(eq(stories.epicId, epicId));
     } else if (status) {
-      result = await db.select().from(stories).where(eq(stories.status, status));
+      result = await db.select().from(stories).where(eq(stories.status, status as StoryStatus));
     } else {
       result = await db.select().from(stories);
     }
