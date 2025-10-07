@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { tasks } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+
+type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'completed';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,12 +16,14 @@ export async function GET(request: NextRequest) {
       result = await db
         .select()
         .from(tasks)
-        .where(eq(tasks.storyId, storyId))
-        .where(eq(tasks.status, status));
+        .where(and(
+          eq(tasks.storyId, storyId),
+          eq(tasks.status, status as TaskStatus)
+        ));
     } else if (storyId) {
       result = await db.select().from(tasks).where(eq(tasks.storyId, storyId));
     } else if (status) {
-      result = await db.select().from(tasks).where(eq(tasks.status, status));
+      result = await db.select().from(tasks).where(eq(tasks.status, status as TaskStatus));
     } else {
       result = await db.select().from(tasks);
     }

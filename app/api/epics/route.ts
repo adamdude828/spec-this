@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { epics } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
+type EpicStatus = 'draft' | 'active' | 'completed' | 'archived';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -10,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     let result;
     if (status) {
-      result = await db.select().from(epics).where(eq(epics.status, status));
+      result = await db.select().from(epics).where(eq(epics.status, status as EpicStatus));
     } else {
       result = await db.select().from(epics);
     }
