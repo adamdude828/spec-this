@@ -72,7 +72,6 @@ Feature descriptions belonging to epics:
 - `acceptanceCriteria` (text)
 - `status` (enum: draft, ready, in_progress, review, completed)
 - `priority` (enum: low, medium, high, critical)
-- `storyPoints` (integer)
 - `orderIndex` (integer)
 - Timestamps: `createdAt`, `updatedAt`
 
@@ -83,8 +82,6 @@ Granular work items belonging to stories:
 - `title` (text, required)
 - `description` (text)
 - `status` (enum: todo, in_progress, blocked, completed)
-- `estimatedHours` (decimal)
-- `actualHours` (decimal)
 - `orderIndex` (integer)
 - Timestamps: `createdAt`, `updatedAt`, `completedAt`
 
@@ -178,8 +175,7 @@ DATABASE_URL=postgresql://user:password@host:port/database
 1. Always create Repositories first (via UI only)
 2. Always create Epics before Stories (must specify repoId)
 3. Always create Stories before Tasks
-3. Use appropriate status transitions (e.g., draft → ready → in_progress → review → completed)
-4. Set realistic story points and time estimates
+4. Use appropriate status transitions (e.g., draft → ready → in_progress → review → completed)
 5. Use descriptive titles and acceptance criteria
 
 ### Database Operations

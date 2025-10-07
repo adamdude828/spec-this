@@ -25,7 +25,6 @@ interface Story {
   acceptanceCriteria: string | null;
   status: string;
   priority: string;
-  storyPoints: number | null;
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
@@ -232,7 +231,6 @@ export default function EpicDetailPage({
                   acceptanceCriteria={story.acceptanceCriteria}
                   status={story.status}
                   priority={story.priority}
-                  storyPoints={story.storyPoints}
                   onUpdate={handleStoryUpdate}
                 />
               ))}

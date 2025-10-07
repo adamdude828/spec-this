@@ -8,8 +8,6 @@ interface TaskCardProps {
   title: string;
   description: string | null;
   status: string;
-  estimatedHours: string | null;
-  actualHours: string | null;
   onUpdate?: () => void;
 }
 
@@ -25,8 +23,6 @@ export default function TaskCard({
   title,
   description,
   status,
-  estimatedHours,
-  actualHours,
   onUpdate,
 }: TaskCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -70,22 +66,10 @@ export default function TaskCard({
         {description && (
           <p className="text-gray-600 text-xs mb-2">{description}</p>
         )}
-        <div className="flex gap-4 text-xs text-gray-500">
-          {estimatedHours && (
-            <div>
-              <span className="font-medium">Est:</span> {estimatedHours}h
-            </div>
-          )}
-          {actualHours && (
-            <div>
-              <span className="font-medium">Actual:</span> {actualHours}h
-            </div>
-          )}
-        </div>
       </div>
 
       <EditTaskModal
-        task={{ id, title, description, status, estimatedHours, actualHours }}
+        task={{ id, title, description, status }}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSave}

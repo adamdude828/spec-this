@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, decimal, uuid, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, uuid, pgEnum } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 // Enums
 export const epicStatusEnum = pgEnum('epic_status', ['draft', 'active', 'completed', 'archived']);
@@ -35,7 +35,6 @@ export const stories = pgTable('stories', {
     acceptanceCriteria: text('acceptance_criteria'),
     status: storyStatusEnum('status').notNull().default('draft'),
     priority: priorityEnum('priority').notNull().default('medium'),
-    storyPoints: integer('story_points'),
     orderIndex: integer('order_index').notNull().default(0),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -47,8 +46,6 @@ export const tasks = pgTable('tasks', {
     title: text('title').notNull(),
     description: text('description'),
     status: taskStatusEnum('status').notNull().default('todo'),
-    estimatedHours: decimal('estimated_hours', { precision: 10, scale: 2 }),
-    actualHours: decimal('actual_hours', { precision: 10, scale: 2 }),
     orderIndex: integer('order_index').notNull().default(0),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
