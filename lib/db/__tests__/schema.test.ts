@@ -34,7 +34,6 @@ describe('Database Schema', () => {
       expect(storyFields).toContain('acceptanceCriteria');
       expect(storyFields).toContain('status');
       expect(storyFields).toContain('priority');
-      expect(storyFields).toContain('storyPoints');
       expect(storyFields).toContain('orderIndex');
     });
   });
@@ -51,8 +50,6 @@ describe('Database Schema', () => {
       expect(taskFields).toContain('title');
       expect(taskFields).toContain('description');
       expect(taskFields).toContain('status');
-      expect(taskFields).toContain('estimatedHours');
-      expect(taskFields).toContain('actualHours');
       expect(taskFields).toContain('orderIndex');
       expect(taskFields).toContain('completedAt');
     });

@@ -9,7 +9,6 @@ const upsertStorySchema = z.object({
     acceptanceCriteria: z.string().optional().describe("Acceptance criteria"),
     status: z.enum(['draft', 'ready', 'in_progress', 'review', 'completed']).optional().describe("Story status"),
     priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe("Story priority"),
-    storyPoints: z.number().int().optional().describe("Story points estimate"),
     orderIndex: z.number().int().optional().describe("Order within epic"),
 });
 export const upsertStoryTool = {
@@ -35,8 +34,6 @@ export const upsertStoryTool = {
                     updateData.status = params.status;
                 if (params.priority !== undefined)
                     updateData.priority = params.priority;
-                if (params.storyPoints !== undefined)
-                    updateData.storyPoints = params.storyPoints;
                 if (params.orderIndex !== undefined)
                     updateData.orderIndex = params.orderIndex;
                 const result = await db
@@ -73,8 +70,6 @@ export const upsertStoryTool = {
                     insertData.status = params.status;
                 if (params.priority !== undefined)
                     insertData.priority = params.priority;
-                if (params.storyPoints !== undefined)
-                    insertData.storyPoints = params.storyPoints;
                 if (params.orderIndex !== undefined)
                     insertData.orderIndex = params.orderIndex;
                 const result = await db.insert(stories).values(insertData).returning();

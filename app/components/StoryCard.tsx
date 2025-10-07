@@ -11,7 +11,6 @@ interface StoryCardProps {
   acceptanceCriteria: string | null;
   status: string;
   priority: string;
-  storyPoints: number | null;
   onUpdate?: () => void;
 }
 
@@ -37,7 +36,6 @@ export default function StoryCard({
   acceptanceCriteria,
   status,
   priority,
-  storyPoints,
   onUpdate,
 }: StoryCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -91,15 +89,10 @@ export default function StoryCard({
         {description && (
           <p className="text-gray-600 text-sm mb-2 line-clamp-2">{description}</p>
         )}
-        {storyPoints !== null && (
-          <div className="text-xs text-gray-500">
-            Story Points: {storyPoints}
-          </div>
-        )}
       </Link>
 
       <EditStoryModal
-        story={{ id, title, description, acceptanceCriteria, status, priority, storyPoints }}
+        story={{ id, title, description, acceptanceCriteria, status, priority }}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSave}

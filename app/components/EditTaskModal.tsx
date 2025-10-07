@@ -8,8 +8,6 @@ interface EditTaskModalProps {
     title: string;
     description: string | null;
     status: string;
-    estimatedHours: string | null;
-    actualHours: string | null;
   };
   isOpen: boolean;
   onClose: () => void;
@@ -26,8 +24,6 @@ export default function EditTaskModal({
     title: task.title,
     description: task.description || '',
     status: task.status,
-    estimatedHours: task.estimatedHours ? parseFloat(task.estimatedHours) : 0,
-    actualHours: task.actualHours ? parseFloat(task.actualHours) : 0,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -99,54 +95,22 @@ export default function EditTaskModal({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                    Status *
-                  </label>
-                  <select
-                    id="status"
-                    required
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="blocked">Blocked</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="estimatedHours" className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Hours
-                  </label>
-                  <input
-                    type="number"
-                    id="estimatedHours"
-                    min="0"
-                    step="0.5"
-                    value={formData.estimatedHours}
-                    onChange={(e) => setFormData({ ...formData, estimatedHours: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="actualHours" className="block text-sm font-medium text-gray-700 mb-1">
-                    Actual Hours
-                  </label>
-                  <input
-                    type="number"
-                    id="actualHours"
-                    min="0"
-                    step="0.5"
-                    value={formData.actualHours}
-                    onChange={(e) => setFormData({ ...formData, actualHours: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                  Status *
+                </label>
+                <select
+                  id="status"
+                  required
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="todo">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="completed">Completed</option>
+                </select>
               </div>
             </div>
 

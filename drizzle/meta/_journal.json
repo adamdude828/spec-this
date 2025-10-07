@@ -15,6 +15,13 @@
       "when": 1759796166296,
       "tag": "0001_aromatic_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1759806206524,
+      "tag": "0002_previous_betty_ross",
+      "breakpoints": true
     }
   ]
 }

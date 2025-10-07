@@ -13,7 +13,6 @@ interface Story {
   acceptanceCriteria: string | null;
   status: string;
   priority: string;
-  storyPoints: number | null;
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
@@ -25,8 +24,6 @@ interface Task {
   title: string;
   description: string | null;
   status: string;
-  estimatedHours: string | null;
-  actualHours: string | null;
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
@@ -180,13 +177,6 @@ export default function StoryDetailPage({
           </div>
         )}
 
-        <div className="flex gap-4 text-sm text-gray-600">
-          {story.storyPoints !== null && (
-            <div>
-              <span className="font-medium">Story Points:</span> {story.storyPoints}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Tasks list */}
@@ -210,7 +200,7 @@ export default function StoryDetailPage({
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No tasks</h3>
             <p className="mt-1 text-sm text-gray-500">
-              This story doesn't have any tasks yet
+              This story doesn&apos;t have any tasks yet
             </p>
           </div>
         ) : (
@@ -224,8 +214,6 @@ export default function StoryDetailPage({
                   title={task.title}
                   description={task.description}
                   status={task.status}
-                  estimatedHours={task.estimatedHours}
-                  actualHours={task.actualHours}
                   onUpdate={handleTaskUpdate}
                 />
               ))}
@@ -234,7 +222,7 @@ export default function StoryDetailPage({
       </div>
 
       <EditStoryModal
-        story={{ id: story.id, title: story.title, description: story.description, acceptanceCriteria: story.acceptanceCriteria, status: story.status, priority: story.priority, storyPoints: story.storyPoints }}
+        story={{ id: story.id, title: story.title, description: story.description, acceptanceCriteria: story.acceptanceCriteria, status: story.status, priority: story.priority }}
         isOpen={isEditStoryModalOpen}
         onClose={() => setIsEditStoryModalOpen(false)}
         onSave={handleStoryUpdate}
