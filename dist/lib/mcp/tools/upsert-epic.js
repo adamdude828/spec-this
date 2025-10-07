@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, epics } from "../../db/index.js";
 const upsertEpicSchema = z.object({
     id: z.string().uuid().optional().describe("Epic ID for update, omit for insert"),
+    repoId: z.string().uuid().describe("Repository ID this epic belongs to"),
     title: z.string().min(1).describe("Epic title"),
     description: z.string().optional().describe("Epic description"),
     status: z.enum(['draft', 'active', 'completed', 'archived']).optional().describe("Epic status"),
@@ -20,6 +21,8 @@ export const upsertEpicTool = {
                 const updateData = {
                     updatedAt: new Date(),
                 };
+                if (params.repoId !== undefined)
+                    updateData.repoId = params.repoId;
                 if (params.title !== undefined)
                     updateData.title = params.title;
                 if (params.description !== undefined)
@@ -53,6 +56,7 @@ export const upsertEpicTool = {
             else {
                 // Insert new epic
                 const insertData = {
+                    repoId: params.repoId,
                     title: params.title,
                 };
                 if (params.description !== undefined)

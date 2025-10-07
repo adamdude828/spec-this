@@ -44,9 +44,18 @@ spec-this/
 
 ## Database Schema
 
-### Epics
-Top-level organizational units with:
+### Repositories
+Top-level organizational units for projects:
 - `id` (UUID, primary key)
+- `name` (text, required)
+- `localPath` (text, required) - Local file system path to the repository
+- `repoUrl` (text) - Optional repository URL (e.g., GitHub)
+- Timestamps: `createdAt`, `updatedAt`
+
+### Epics
+Feature groups belonging to repositories:
+- `id` (UUID, primary key)
+- `repoId` (UUID, foreign key → repositories, required)
 - `title` (text, required)
 - `description` (text)
 - `status` (enum: draft, active, completed, archived)
@@ -81,15 +90,16 @@ Granular work items belonging to stories:
 
 ## MCP Server
 
-The MCP server (`mcp-server.ts`) exposes 6 tools for managing the spec hierarchy:
+The MCP server (`mcp-server.ts`) exposes 7 tools for managing the spec hierarchy:
 
 ### Available Tools
-1. **read_epics** - Fetch all epics, filter by status, or get specific epic by ID
-2. **upsert_epic** - Create new epic or update existing (provide ID to update)
-3. **read_stories** - Fetch stories with optional filters (epicId, status, or specific ID)
-4. **upsert_story** - Create/update stories
-5. **read_tasks** - Fetch tasks with optional filters (storyId, status, or specific ID)
-6. **upsert_task** - Create/update tasks
+1. **read_repos** - Fetch all repositories or get specific repository by ID (read-only, create repos via UI)
+2. **read_epics** - Fetch all epics, filter by status, or get specific epic by ID
+3. **upsert_epic** - Create new epic or update existing (requires repoId, provide ID to update)
+4. **read_stories** - Fetch stories with optional filters (epicId, status, or specific ID)
+5. **upsert_story** - Create/update stories
+6. **read_tasks** - Fetch tasks with optional filters (storyId, status, or specific ID)
+7. **upsert_task** - Create/update tasks
 
 ### MCP Server Commands
 ```bash
@@ -139,7 +149,8 @@ npm run db:studio    # Open Drizzle Studio UI
 ## Key Design Patterns
 
 ### Cascade Deletion
-- Deleting an Epic cascades to all child Stories
+- Deleting a Repository cascades to all child Epics (and their Stories/Tasks)
+- Deleting an Epic cascades to all child Stories (and their Tasks)
 - Deleting a Story cascades to all child Tasks
 
 ### Ordering
@@ -163,9 +174,10 @@ DATABASE_URL=postgresql://user:password@host:port/database
 
 ## Best Practices for Claude
 
-### When Working with Epics/Stories/Tasks
-1. Always create Epics before Stories
-2. Always create Stories before Tasks
+### When Working with Repositories/Epics/Stories/Tasks
+1. Always create Repositories first (via UI only)
+2. Always create Epics before Stories (must specify repoId)
+3. Always create Stories before Tasks
 3. Use appropriate status transitions (e.g., draft → ready → in_progress → review → completed)
 4. Set realistic story points and time estimates
 5. Use descriptive titles and acceptance criteria

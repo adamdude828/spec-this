@@ -17,21 +17,13 @@ export default function Navigation() {
             <Link
               href="/"
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                pathname === '/' || pathname.startsWith('/epics')
+                pathname === '/' || pathname.startsWith('/repos')
                   ? 'bg-gray-900 text-white'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
               }`}
             >
-              Epics
+              Repositories
             </Link>
-            <div className="relative">
-              <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-400 cursor-not-allowed inline-flex items-center">
-                Repos
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600">
-                  Coming Soon
-                </span>
-              </span>
-            </div>
           </div>
         </div>
       </div>

@@ -8,6 +8,13 @@
       "when": 1759783438263,
       "tag": "0000_easy_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1759796166296,
+      "tag": "0001_aromatic_switch",
+      "breakpoints": true
     }
   ]
 }

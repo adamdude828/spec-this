@@ -7,6 +7,7 @@ import EditEpicModal from '@/app/components/EditEpicModal';
 
 interface Epic {
   id: string;
+  repoId: string;
   title: string;
   description: string | null;
   status: string;
@@ -125,7 +126,7 @@ export default function EpicDetailPage({
     <div>
       {/* Back navigation */}
       <Link
-        href="/"
+        href={`/repos/${epic.repoId}`}
         className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6"
       >
         <svg
@@ -141,7 +142,7 @@ export default function EpicDetailPage({
             d="M15 19l-7-7 7-7"
           />
         </svg>
-        Back to Epics
+        Back to Repository
       </Link>
 
       {/* Epic details */}

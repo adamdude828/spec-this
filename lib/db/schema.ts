@@ -7,9 +7,20 @@ export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high', 'critic
 export const storyStatusEnum = pgEnum('story_status', ['draft', 'ready', 'in_progress', 'review', 'completed']);
 export const taskStatusEnum = pgEnum('task_status', ['todo', 'in_progress', 'blocked', 'completed']);
 
+// Repositories Table
+export const repositories = pgTable('repositories', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  localPath: text('local_path').notNull(),
+  repoUrl: text('repo_url'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 // Epics Table
 export const epics = pgTable('epics', {
   id: uuid('id').primaryKey().defaultRandom(),
+  repoId: uuid('repo_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
   status: epicStatusEnum('status').notNull().default('draft'),
@@ -50,7 +61,15 @@ export const tasks = pgTable('tasks', {
 });
 
 // Relations
-export const epicsRelations = relations(epics, ({ many }) => ({
+export const repositoriesRelations = relations(repositories, ({ many }) => ({
+  epics: many(epics),
+}));
+
+export const epicsRelations = relations(epics, ({ one, many }) => ({
+  repository: one(repositories, {
+    fields: [epics.repoId],
+    references: [repositories.id],
+  }),
   stories: many(stories),
 }));
 
