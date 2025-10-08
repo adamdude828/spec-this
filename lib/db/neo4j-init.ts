@@ -1,4 +1,4 @@
-import { neo4j as neo4jConnection, runWriteTransaction } from "./neo4j";
+import { neo4j as neo4jConnection, runWriteTransaction } from "./neo4j.js";
 
 /**
  * Initialize Neo4j database with constraints and indexes
@@ -110,7 +110,7 @@ export async function getGraphStats(): Promise<{
     `);
 
     const filesByLanguage: Record<string, number> = {};
-    langResult.records.forEach((record) => {
+    langResult.records.forEach((record: any) => {
       const language = record.get("language");
       const count = record.get("count").toNumber();
       filesByLanguage[language] = count;

@@ -1,11 +1,11 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import { TypeScriptParser } from "./typescript-parser";
+import { TypeScriptParser } from "./typescript-parser.js";
 import {
   DependencyResolver,
   type ResolverConfig,
-} from "./dependency-resolver";
-import { type FileNode, type DependencyEdge, type ParsedFile } from "./types";
+} from "./dependency-resolver.js";
+import { type FileNode, type DependencyEdge, type ParsedFile } from "./types.js";
 
 /**
  * Configuration for file indexing

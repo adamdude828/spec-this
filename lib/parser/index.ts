@@ -8,15 +8,15 @@
  * - Build and store file dependency graphs in Neo4j
  */
 
-export * from "./types";
-export * from "./typescript-parser";
-export * from "./dependency-resolver";
-export * from "./file-indexer";
-export * from "./neo4j-graph-store";
+export * from "./types.js";
+export * from "./typescript-parser.js";
+export * from "./dependency-resolver.js";
+export * from "./file-indexer.js";
+export * from "./neo4j-graph-store.js";
 
-import { FileIndexer } from "./file-indexer";
-import { neo4jGraphStore } from "./neo4j-graph-store";
-import { neo4j } from "../db/neo4j";
+import { FileIndexer } from "./file-indexer.js";
+import { neo4jGraphStore } from "./neo4j-graph-store.js";
+import { neo4j } from "../db/neo4j.js";
 
 /**
  * Index a repository and store its dependency graph in Neo4j
