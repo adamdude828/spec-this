@@ -26,6 +26,18 @@ interface Epic {
   createdBy: string | null;
 }
 
+interface GraphStats {
+  basicStats: {
+    fileCount: number;
+    dependencyCount: number;
+    languageBreakdown: Record<string, number>;
+  };
+  mostImported: Array<{ relativePath: string; count: number }>;
+  mostDependencies: Array<{ relativePath: string; count: number }>;
+  circularDeps: Array<{ cycle: string[] }>;
+  orphanedFiles: Array<{ relativePath: string }>;
+}
+
 export default function RepoDetailPage({
   params,
 }: {
@@ -36,6 +48,11 @@ export default function RepoDetailPage({
   const [epics, setEpics] = useState<Epic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateEpicModalOpen, setIsCreateEpicModalOpen] = useState(false);
+  const [isIndexing, setIsIndexing] = useState(false);
+  const [indexMessage, setIndexMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [graphStats, setGraphStats] = useState<GraphStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isGraphExpanded, setIsGraphExpanded] = useState(false);
 
   useEffect(() => {
     params.then((p) => setId(p.id));
@@ -68,10 +85,64 @@ export default function RepoDetailPage({
 
   useEffect(() => {
     fetchData();
+    fetchGraphStats();
   }, [id]);
+
+  const fetchGraphStats = async () => {
+    if (!id) return;
+
+    setIsLoadingStats(true);
+    try {
+      const response = await fetch(`/api/graph-stats?repoId=${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGraphStats(data);
+      }
+    } catch (error) {
+      console.error('Error fetching graph stats:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
 
   const handleEpicUpdate = () => {
     fetchData();
+  };
+
+  const handleIndexCodebase = async () => {
+    setIsIndexing(true);
+    setIndexMessage(null);
+
+    try {
+      const response = await fetch(`/api/index-codebase`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ repoId: id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to index codebase');
+      }
+
+      setIndexMessage({
+        type: 'success',
+        text: data.message || 'Codebase indexed successfully!',
+      });
+
+      // Refresh graph stats after indexing
+      await fetchGraphStats();
+    } catch (error) {
+      setIndexMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to index codebase',
+      });
+    } finally {
+      setIsIndexing(false);
+    }
   };
 
   if (isLoading || !repo) {
@@ -125,7 +196,68 @@ export default function RepoDetailPage({
       <div className="bg-white rounded-lg shadow p-6 mb-6 border border-gray-200">
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900 flex-1">{repo.name}</h1>
+          <button
+            onClick={handleIndexCodebase}
+            disabled={isIndexing}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+          >
+            {isIndexing ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Indexing...
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+                  />
+                </svg>
+                Index Codebase
+              </>
+            )}
+          </button>
         </div>
+
+        {/* Success/Error message */}
+        {indexMessage && (
+          <div
+            className={`mb-4 p-3 rounded-md text-sm ${
+              indexMessage.type === 'success'
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
+            {indexMessage.text}
+          </div>
+        )}
 
         <div className="space-y-2 text-sm text-gray-600">
           <div className="flex items-center">
@@ -182,6 +314,218 @@ export default function RepoDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Graph Statistics */}
+      {graphStats && (
+        <div className="bg-white rounded-lg shadow mb-6 border border-gray-200">
+          <button
+            onClick={() => setIsGraphExpanded(!isGraphExpanded)}
+            className="w-full p-6 text-left hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Codebase Graph</h2>
+              <svg
+                className={`w-6 h-6 text-gray-500 transition-transform ${
+                  isGraphExpanded ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </button>
+
+          {/* Basic Stats - Always Visible */}
+          <div className="px-6 pb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+              <div className="text-sm text-blue-600 font-medium mb-1">Total Files</div>
+              <div className="text-3xl font-bold text-blue-900">
+                {graphStats.basicStats.fileCount}
+              </div>
+            </div>
+            <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+              <div className="text-sm text-green-600 font-medium mb-1">Dependencies</div>
+              <div className="text-3xl font-bold text-green-900">
+                {graphStats.basicStats.dependencyCount}
+              </div>
+            </div>
+            <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
+              <div className="text-sm text-yellow-600 font-medium mb-1">Circular Deps</div>
+              <div className="text-3xl font-bold text-yellow-900">
+                {graphStats.circularDeps.length}
+              </div>
+            </div>
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+              <div className="text-sm text-purple-600 font-medium mb-1">Orphaned Files</div>
+              <div className="text-3xl font-bold text-purple-900">
+                {graphStats.orphanedFiles.length}
+              </div>
+            </div>
+          </div>
+          </div>
+
+          {/* Expandable Details */}
+          {isGraphExpanded && (
+            <div className="px-6 pb-6 border-t border-gray-100 pt-6">
+              {/* Language Breakdown */}
+              {Object.keys(graphStats.basicStats.languageBreakdown).length > 0 && (
+                <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Language Breakdown</h3>
+              <div className="flex gap-3">
+                {Object.entries(graphStats.basicStats.languageBreakdown).map(([lang, count]) => (
+                  <div key={lang} className="bg-gray-50 rounded-md px-3 py-2 text-sm border border-gray-200">
+                    <span className="font-medium text-gray-900 capitalize">{lang}:</span>{' '}
+                    <span className="text-gray-600">{count}</span>
+                  </div>
+                ))}
+              </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Most Imported Files */}
+                <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Most Imported Files</h3>
+              {graphStats.mostImported.length > 0 ? (
+                <div className="space-y-2">
+                  {graphStats.mostImported.slice(0, 5).map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200 text-sm"
+                    >
+                      <code className="text-gray-700 truncate flex-1 mr-2">
+                        {file.relativePath}
+                      </code>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
+                        {file.count} imports
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No data available</p>
+              )}
+                </div>
+
+                {/* Files with Most Dependencies */}
+                <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Most Dependencies</h3>
+              {graphStats.mostDependencies.length > 0 ? (
+                <div className="space-y-2">
+                  {graphStats.mostDependencies.slice(0, 5).map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200 text-sm"
+                    >
+                      <code className="text-gray-700 truncate flex-1 mr-2">
+                        {file.relativePath}
+                      </code>
+                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
+                        {file.count} deps
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No data available</p>
+              )}
+                </div>
+
+                {/* Circular Dependencies */}
+                {graphStats.circularDeps.length > 0 && (
+                  <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                  <svg
+                    className="w-5 h-5 mr-2 text-yellow-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  Circular Dependencies
+                </h3>
+                <div className="space-y-2">
+                  {graphStats.circularDeps.slice(0, 3).map((dep, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-yellow-50 rounded border border-yellow-200"
+                    >
+                      <div className="text-xs text-yellow-800 space-y-1">
+                        {dep.cycle.map((file, fileIdx) => (
+                          <div key={fileIdx} className="flex items-center">
+                            {fileIdx > 0 && (
+                              <svg
+                                className="w-3 h-3 mr-1 text-yellow-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            )}
+                            <code className="text-yellow-900">{file}</code>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                  </div>
+                )}
+
+                {/* Orphaned Files */}
+                {graphStats.orphanedFiles.length > 0 && (
+                  <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Orphaned Files</h3>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {graphStats.orphanedFiles.slice(0, 10).map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 bg-gray-50 rounded border border-gray-200 text-sm"
+                    >
+                      <code className="text-gray-600">{file.relativePath}</code>
+                    </div>
+                  ))}
+                  {graphStats.orphanedFiles.length > 10 && (
+                    <p className="text-xs text-gray-500 italic pt-2">
+                      ...and {graphStats.orphanedFiles.length - 10} more
+                    </p>
+                  )}
+                </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isLoadingStats && !graphStats && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6 border border-gray-200">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">Loading graph statistics...</div>
+          </div>
+        </div>
+      )}
 
       {/* Epics list */}
       <div>
