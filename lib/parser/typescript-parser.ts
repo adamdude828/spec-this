@@ -6,7 +6,7 @@ import {
   ImportStatement,
   ExportStatement,
   ImportType,
-} from "./types.js";
+} from "./types";
 
 export class TypeScriptParser implements ILanguageParser {
   language = "typescript";
