@@ -2,9 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
-    serverComponentsExternalPackages: ["tree-sitter", "tree-sitter-typescript"],
-  },
+  serverExternalPackages: ["tree-sitter", "tree-sitter-typescript"],
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Mark tree-sitter as external for server builds

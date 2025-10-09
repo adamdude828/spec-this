@@ -1,34 +1,48 @@
 import { createMcpHandler } from 'mcp-handler';
 import { allTools } from '@/lib/mcp/tools';
+import type { NextRequest } from 'next/server';
 
 /**
  * MCP Server using Vercel's mcp-handler
- * Handles both Streamable HTTP and SSE transports
- * SSE requires Redis for state management (configured on port 6380)
+ * Handles Streamable HTTP transport only
  * No separate server needed - everything runs through Next.js
  */
 
-const handler = createMcpHandler(
-  (server) => {
-    // Register all tools from our registry
-    for (const tool of allTools) {
-      server.tool(
-        tool.name,
-        tool.description,
-        tool.schema.shape, // Pass the Zod schema shape
-        async (args) => {
-          // Call the original handler
-          return await tool.handler(args as never);
-        }
-      );
-    }
-  },
-  {
-    basePath: '/api',
-    // Redis for SSE state management (using custom port 6380)
-    redisUrl: process.env.REDIS_URL || 'redis://localhost:6380',
-    verboseLogs: process.env.NODE_ENV === 'development',
-  }
-);
+// Force dynamic rendering - don't prerender during build/start
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export { handler as GET, handler as POST };
+// Lazy initialization to avoid connections during build
+let handler: ReturnType<typeof createMcpHandler> | null = null;
+
+function getHandler() {
+  if (!handler) {
+    handler = createMcpHandler(
+      (server) => {
+        // Register all tools from our registry
+        for (const tool of allTools) {
+          server.tool(
+            tool.name,
+            tool.description,
+            tool.schema.shape, // Pass the Zod schema shape
+            async (args) => {
+              // Call the original handler
+              return await tool.handler(args as never);
+            }
+          );
+        }
+      },
+      undefined, // serverOptions - using defaults
+      // No Redis config - HTTP transport only
+    );
+  }
+  return handler;
+}
+
+export async function GET(request: NextRequest) {
+  return getHandler()(request);
+}
+
+export async function POST(request: NextRequest) {
+  return getHandler()(request);
+}

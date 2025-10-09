@@ -3,6 +3,10 @@ import { db } from "@/lib/db";
 import { repositories } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+// Force dynamic rendering - don't prerender during build/start
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
