@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createMcpServer } from "./lib/mcp/server.js";
 import { allTools } from "./lib/mcp/tools/index.js";
 import * as dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
@@ -15,24 +15,8 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, ".env.local") });
 
 async function main() {
-  const server = new McpServer({
-    name: "spec-this-mcp-server",
-    description: "MCP server for spec-driven development tool",
-    version: "1.0.0",
-    capabilities: {
-      tools: {},
-    },
-  });
-
-  // Register all tools from the registry
-  for (const tool of allTools) {
-    server.tool(
-      tool.name,
-      tool.description,
-      tool.schema.shape,
-      async (args) => tool.handler(args as never)
-    );
-  }
+  // Create the MCP server with all tools
+  const server = createMcpServer();
 
   // Use stdio transport
   const transport = new StdioServerTransport();
