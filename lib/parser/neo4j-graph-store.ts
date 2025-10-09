@@ -1,6 +1,6 @@
-import { runWriteTransaction, runReadTransaction } from "../db/neo4j";
-import type { FileNode, DependencyEdge } from "./types";
-import type { IndexResult } from "./file-indexer";
+import { runWriteTransaction, runReadTransaction } from "../db/neo4j.ts";
+import type { FileNode, DependencyEdge } from "./types.ts";
+import type { IndexResult } from "./file-indexer.ts";
 
 /**
  * Store and manage file dependency graphs in Neo4j

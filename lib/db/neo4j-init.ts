@@ -1,4 +1,4 @@
-import { neo4j as neo4jConnection, runWriteTransaction } from "./neo4j";
+import { neo4j as neo4jConnection, runWriteTransaction } from "./neo4j.ts";
 
 /**
  * Initialize Neo4j database with constraints and indexes
