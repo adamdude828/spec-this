@@ -25,7 +25,6 @@ class ShutdownHandler {
     }
 
     this.isShuttingDown = true;
-    console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
 
     // Run all cleanup callbacks in parallel
     try {
@@ -38,7 +37,6 @@ class ShutdownHandler {
           }
         })
       );
-      console.log('✅ Cleanup complete');
     } catch (error) {
       console.error('Error during shutdown:', error);
     }
@@ -52,29 +50,17 @@ export const shutdownHandler = new ShutdownHandler();
 
 // Register signal handlers once
 if (typeof process !== 'undefined') {
-  console.log('🔧 Registering shutdown handlers...');
-
-  // Use raw listeners to see what's already registered
-  const existingSIGINT = process.listenerCount('SIGINT');
-  const existingSIGTERM = process.listenerCount('SIGTERM');
-  console.log(`📊 Existing handlers - SIGINT: ${existingSIGINT}, SIGTERM: ${existingSIGTERM}`);
-
   // Remove all existing SIGINT/SIGTERM handlers (likely from Next.js)
   // This is necessary because Next.js's handlers don't call process.exit()
   process.removeAllListeners('SIGINT');
   process.removeAllListeners('SIGTERM');
-  console.log('🗑️  Removed existing signal handlers');
 
   // Add our handlers with immediate exit
   process.on('SIGINT', () => {
-    console.log('🎯 SIGINT handler called!');
     shutdownHandler.shutdown('SIGINT');
   });
 
   process.on('SIGTERM', () => {
-    console.log('🎯 SIGTERM handler called!');
     shutdownHandler.shutdown('SIGTERM');
   });
-
-  console.log('✅ Shutdown handlers registered');
 }
