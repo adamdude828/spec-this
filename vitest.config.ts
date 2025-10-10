@@ -5,8 +5,6 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
     globals: true,
     coverage: {
       provider: 'v8',
@@ -20,6 +18,28 @@ export default defineConfig({
         'app/**',
       ],
     },
+    // Use projects to define different test environments
+    projects: [
+      {
+        name: 'node',
+        test: {
+          include: ['lib/**/*.test.{ts,tsx}'],
+          environment: 'node',
+        },
+      },
+      {
+        name: 'jsdom',
+        test: {
+          include: [
+            'app/**/*.test.{ts,tsx}',
+            '**/*.component.test.{ts,tsx}',
+            '**/*.ui.test.{ts,tsx}',
+          ],
+          environment: 'jsdom',
+          setupFiles: ['./vitest.setup.ts'],
+        },
+      },
+    ],
   },
   resolve: {
     alias: {

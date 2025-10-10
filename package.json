@@ -15,6 +15,7 @@
     "dev:mcp": "tsx mcp-server.ts",
     "lint": "eslint",
     "test": "vitest",
+    "test:ci": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "db:generate": "drizzle-kit generate",
