@@ -318,29 +318,52 @@ export default function RepoDetailPage({
       {/* Graph Statistics */}
       {graphStats && (
         <div className="bg-white rounded-lg shadow mb-6 border border-gray-200">
-          <button
-            onClick={() => setIsGraphExpanded(!isGraphExpanded)}
-            className="w-full p-6 text-left hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center justify-between">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Codebase Graph</h2>
-              <svg
-                className={`w-6 h-6 text-gray-500 transition-transform ${
-                  isGraphExpanded ? 'rotate-180' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <div className="flex items-center gap-3">
+                <Link
+                  href={`/repos/${id}/graph`}
+                  className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 flex items-center"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                    />
+                  </svg>
+                  View Graph
+                </Link>
+                <button
+                  onClick={() => setIsGraphExpanded(!isGraphExpanded)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg
+                    className={`w-6 h-6 transition-transform ${
+                      isGraphExpanded ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </button>
+          </div>
 
           {/* Basic Stats - Always Visible */}
           <div className="px-6 pb-6">
