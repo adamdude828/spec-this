@@ -18,28 +18,9 @@ export default defineConfig({
         'app/**',
       ],
     },
-    // Use projects to define different test environments
-    projects: [
-      {
-        name: 'node',
-        test: {
-          include: ['lib/**/*.test.{ts,tsx}'],
-          environment: 'node',
-        },
-      },
-      {
-        name: 'jsdom',
-        test: {
-          include: [
-            'app/**/*.test.{ts,tsx}',
-            '**/*.component.test.{ts,tsx}',
-            '**/*.ui.test.{ts,tsx}',
-          ],
-          environment: 'jsdom',
-          setupFiles: ['./vitest.setup.ts'],
-        },
-      },
-    ],
+    // Use different includes based on environment
+    include: ['lib/**/*.test.{ts,tsx}', 'app/**/*.test.{ts,tsx}'],
+    environment: 'node',
   },
   resolve: {
     alias: {

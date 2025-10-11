@@ -19,7 +19,7 @@ class ShutdownHandler {
   /**
    * Execute all cleanup callbacks and exit
    */
-  public async shutdown(signal: string): Promise<void> {
+  public async shutdown(_signal: string): Promise<void> {
     if (this.isShuttingDown) {
       return;
     }
