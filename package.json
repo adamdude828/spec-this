@@ -3,16 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": {
-    "spec-this-mcp": "./dist/mcp-server.js"
-  },
   "scripts": {
     "dev": "next dev --turbopack -p 3080",
     "build": "next build --turbopack",
-    "build:mcp": "tsc --project tsconfig.mcp.json && chmod 755 dist/mcp-server.js",
     "start": "next start -p 3080",
-    "start:mcp": "node dist/mcp-server.js",
-    "dev:mcp": "tsx mcp-server.ts",
     "lint": "eslint",
     "test": "vitest",
     "test:ci": "vitest run",

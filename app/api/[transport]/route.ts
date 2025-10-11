@@ -1,6 +1,5 @@
 import { createMcpHandler } from 'mcp-handler';
 import { allTools } from '@/lib/mcp/tools';
-import type { NextRequest } from 'next/server';
 
 /**
  * MCP Server using Vercel's mcp-handler
@@ -12,37 +11,26 @@ import type { NextRequest } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Lazy initialization to avoid connections during build
-let handler: ReturnType<typeof createMcpHandler> | null = null;
-
-function getHandler() {
-  if (!handler) {
-    handler = createMcpHandler(
-      (server) => {
-        // Register all tools from our registry
-        for (const tool of allTools) {
-          server.tool(
-            tool.name,
-            tool.description,
-            tool.schema.shape, // Pass the Zod schema shape
-            async (args) => {
-              // Call the original handler
-              return await tool.handler(args as never);
-            }
-          );
+const handler = createMcpHandler(
+  (server) => {
+    // Register all tools from our registry
+    for (const tool of allTools) {
+      server.tool(
+        tool.name,
+        tool.description,
+        tool.schema.shape, // Pass the Zod schema shape
+        async (args) => {
+          // Call the original handler
+          return await tool.handler(args as never);
         }
-      },
-      undefined, // serverOptions - using defaults
-      // No Redis config - HTTP transport only
-    );
+      );
+    }
+  },
+  undefined, // serverOptions - using defaults
+  {
+    basePath: '/api', // this needs to match where the [transport] is located
+    redisUrl: process.env.REDIS_URL, // Optional: for SSE transport support
   }
-  return handler;
-}
+);
 
-export async function GET(request: NextRequest) {
-  return getHandler()(request);
-}
-
-export async function POST(request: NextRequest) {
-  return getHandler()(request);
-}
+export { handler as GET, handler as POST };
