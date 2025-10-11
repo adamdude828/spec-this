@@ -5,8 +5,6 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
     globals: true,
     coverage: {
       provider: 'v8',
@@ -20,6 +18,9 @@ export default defineConfig({
         'app/**',
       ],
     },
+    // Use different includes based on environment
+    include: ['lib/**/*.test.{ts,tsx}', 'app/**/*.test.{ts,tsx}'],
+    environment: 'node',
   },
   resolve: {
     alias: {

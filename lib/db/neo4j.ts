@@ -1,4 +1,5 @@
 import neo4jDriver, { Driver, Session } from "neo4j-driver";
+import { shutdownHandler } from "../shutdown-handler.ts";
 
 class Neo4jConnection {
   private driver: Driver | null = null;
@@ -63,6 +64,13 @@ class Neo4jConnection {
 
 // Export singleton instance
 export const neo4j = Neo4jConnection.getInstance();
+
+// Register cleanup function with shutdown handler
+shutdownHandler.register(async () => {
+  if (neo4j.isConnected()) {
+    await neo4j.disconnect();
+  }
+});
 
 // Helper function for running queries with automatic session management
 export async function runQuery<T = any>(

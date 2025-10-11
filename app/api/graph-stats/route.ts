@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Force dynamic rendering - don't prerender during build/start
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Helper to convert Neo4j integers to JavaScript numbers
 function toNumber(value: any): number {
   if (typeof value === "number") return value;

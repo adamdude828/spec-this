@@ -67,9 +67,6 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
-      - name: Build MCP server
-        run: npm run build:mcp
-
   type-check:
     name: Type Check
     runs-on: ubuntu-latest

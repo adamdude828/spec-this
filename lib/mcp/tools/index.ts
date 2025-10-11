@@ -6,8 +6,10 @@ import { readStoriesTool } from "./read-stories.ts";
 import { upsertStoryTool } from "./upsert-story.ts";
 import { readTasksTool } from "./read-tasks.ts";
 import { upsertTaskTool } from "./upsert-task.ts";
+import { echoTool } from "./echo.ts";
 
 export const allTools: ToolDefinition[] = [
+  echoTool,
   readReposTool,
   readEpicsTool,
   upsertEpicTool,
@@ -17,6 +19,7 @@ export const allTools: ToolDefinition[] = [
   upsertTaskTool,
 ];
 
+export * from "./echo.ts";
 export * from "./read-repos.ts";
 export * from "./read-epics.ts";
 export * from "./upsert-epic.ts";
