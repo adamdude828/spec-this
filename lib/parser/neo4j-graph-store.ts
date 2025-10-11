@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { runWriteTransaction, runReadTransaction } from "../db/neo4j.ts";
 import type { FileNode, DependencyEdge } from "./types.ts";
 import type { IndexResult } from "./file-indexer.ts";

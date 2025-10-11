@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { db, repositories } from "../../db/index.ts";
+import { db, repositories, providers } from "../../db/index.ts";
 import type { ToolDefinition } from "../types/tool.ts";
 
 const readReposSchema = z.object({
@@ -14,8 +14,28 @@ export const readReposTool: ToolDefinition = {
   handler: async (params) => {
     try {
       if (params.id) {
-        // Fetch specific repository by ID
-        const results = await db.select().from(repositories).where(eq(repositories.id, params.id));
+        // Fetch specific repository by ID with provider details
+        const results = await db
+          .select({
+            id: repositories.id,
+            name: repositories.name,
+            localPath: repositories.localPath,
+            repoUrl: repositories.repoUrl,
+            providerId: repositories.providerId,
+            createdAt: repositories.createdAt,
+            updatedAt: repositories.updatedAt,
+            provider: {
+              id: providers.id,
+              name: providers.name,
+              code: providers.code,
+              baseUrlPattern: providers.baseUrlPattern,
+              fileUrlPattern: providers.fileUrlPattern,
+              lineUrlPattern: providers.lineUrlPattern,
+            },
+          })
+          .from(repositories)
+          .leftJoin(providers, eq(repositories.providerId, providers.id))
+          .where(eq(repositories.id, params.id));
 
         if (results.length === 0) {
           return {
@@ -34,8 +54,27 @@ export const readReposTool: ToolDefinition = {
         };
       }
 
-      // Fetch all repositories
-      const results = await db.select().from(repositories);
+      // Fetch all repositories with provider details
+      const results = await db
+        .select({
+          id: repositories.id,
+          name: repositories.name,
+          localPath: repositories.localPath,
+          repoUrl: repositories.repoUrl,
+          providerId: repositories.providerId,
+          createdAt: repositories.createdAt,
+          updatedAt: repositories.updatedAt,
+          provider: {
+            id: providers.id,
+            name: providers.name,
+            code: providers.code,
+            baseUrlPattern: providers.baseUrlPattern,
+            fileUrlPattern: providers.fileUrlPattern,
+            lineUrlPattern: providers.lineUrlPattern,
+          },
+        })
+        .from(repositories)
+        .leftJoin(providers, eq(repositories.providerId, providers.id));
 
       return {
         content: [{

@@ -2,6 +2,15 @@
 
 import { useState } from 'react';
 
+interface UpdatedStory {
+  id: string;
+  title: string;
+  description: string | null;
+  acceptanceCriteria: string | null;
+  status: string;
+  priority: string;
+}
+
 interface EditStoryModalProps {
   story: {
     id: string;
@@ -13,7 +22,7 @@ interface EditStoryModalProps {
   };
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedStory: any) => void;
+  onSave: (updatedStory: UpdatedStory) => void;
 }
 
 export default function EditStoryModal({

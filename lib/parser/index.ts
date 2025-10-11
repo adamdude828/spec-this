@@ -14,6 +14,7 @@ export * from "./dependency-resolver.ts";
 export * from "./file-indexer.ts";
 export * from "./neo4j-graph-store.ts";
 
+/* eslint-disable no-console */
 import { FileIndexer } from "./file-indexer.ts";
 import { neo4jGraphStore } from "./neo4j-graph-store.ts";
 import { neo4j } from "../db/neo4j.ts";

@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 
+interface UpdatedEpic {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+}
+
 interface EditEpicModalProps {
   epic: {
     id: string;
@@ -12,7 +20,7 @@ interface EditEpicModalProps {
   };
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedEpic: any) => void;
+  onSave: (updatedEpic: UpdatedEpic) => void;
 }
 
 export default function EditEpicModal({

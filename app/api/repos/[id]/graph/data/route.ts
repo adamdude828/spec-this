@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildSourceUrl } from "@/lib/services/url-builder";
+import { db } from "@/lib/db";
+import { repositories } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -21,6 +25,21 @@ export async function GET(
       return NextResponse.json(
         { error: "Repository ID is required" },
         { status: 400 }
+      );
+    }
+
+    // Fetch repository with provider information
+    const repo = await db.query.repositories.findFirst({
+      where: eq(repositories.id, repoId),
+      with: {
+        provider: true,
+      },
+    });
+
+    if (!repo) {
+      return NextResponse.json(
+        { error: "Repository not found" },
+        { status: 404 }
       );
     }
 
@@ -65,6 +84,18 @@ export async function GET(
     const nodes = filesResult.map((file) => {
       const extension = file.extension || getFileExtension(file.filePath);
 
+      // Build source URL if provider is available
+      let sourceUrl: string | null = null;
+      if (repo.repoUrl && repo.provider) {
+        sourceUrl = buildSourceUrl({
+          repository: {
+            repoUrl: repo.repoUrl,
+            provider: repo.provider,
+          },
+          filePath: file.relativePath,
+        });
+      }
+
       return {
         id: file.filePath,
         type: 'fileNode',
@@ -74,6 +105,7 @@ export async function GET(
           language: file.language,
           extension: extension,
           filePath: file.filePath,
+          sourceUrl: sourceUrl,
         },
       };
     });

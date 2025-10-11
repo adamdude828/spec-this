@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import StoryCard from '@/app/components/StoryCard';
 import EditEpicModal from '@/app/components/EditEpicModal';
 
@@ -58,7 +58,7 @@ export default function EpicDetailPage({
     params.then((p) => setId(p.id));
   }, [params]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!id) return;
 
     try {
@@ -81,11 +81,11 @@ export default function EpicDetailPage({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [fetchData]);
 
   const handleStoryUpdate = () => {
     fetchData();

@@ -28,7 +28,6 @@ class Neo4jConnection {
 
       // Verify connectivity
       await this.driver.verifyConnectivity();
-      console.log("✅ Connected to Neo4j");
     } catch (error) {
       console.error("❌ Failed to connect to Neo4j:", error);
       throw error;
@@ -39,7 +38,6 @@ class Neo4jConnection {
     if (this.driver) {
       await this.driver.close();
       this.driver = null;
-      console.log("🔌 Disconnected from Neo4j");
     }
   }
 
@@ -73,9 +71,9 @@ shutdownHandler.register(async () => {
 });
 
 // Helper function for running queries with automatic session management
-export async function runQuery<T = any>(
+export async function runQuery<T = Record<string, unknown>>(
   query: string,
-  params: Record<string, any> = {}
+  params: Record<string, unknown> = {}
 ): Promise<T[]> {
   const session = neo4j.getSession();
   try {
@@ -87,9 +85,9 @@ export async function runQuery<T = any>(
 }
 
 // Helper function for write transactions
-export async function runWriteTransaction<T = any>(
+export async function runWriteTransaction<T = Record<string, unknown>>(
   query: string,
-  params: Record<string, any> = {}
+  params: Record<string, unknown> = {}
 ): Promise<T[]> {
   const session = neo4j.getSession();
   try {
@@ -101,9 +99,9 @@ export async function runWriteTransaction<T = any>(
 }
 
 // Helper function for read transactions
-export async function runReadTransaction<T = any>(
+export async function runReadTransaction<T = Record<string, unknown>>(
   query: string,
-  params: Record<string, any> = {}
+  params: Record<string, unknown> = {}
 ): Promise<T[]> {
   const session = neo4j.getSession();
   try {

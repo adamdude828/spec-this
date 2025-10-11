@@ -2,6 +2,13 @@
 
 import { useState } from 'react';
 
+interface UpdatedTask {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+}
+
 interface EditTaskModalProps {
   task: {
     id: string;
@@ -11,7 +18,7 @@ interface EditTaskModalProps {
   };
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedTask: any) => void;
+  onSave: (updatedTask: UpdatedTask) => void;
 }
 
 export default function EditTaskModal({
