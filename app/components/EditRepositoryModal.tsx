@@ -8,24 +8,43 @@ interface Provider {
   code: string;
 }
 
-interface CreateRepositoryModalProps {
+interface Repository {
+  id: string;
+  name: string;
+  localPath: string;
+  repoUrl: string | null;
+  providerId: string | null;
+  provider?: Provider | null;
+}
+
+interface EditRepositoryModalProps {
+  repository: Repository;
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
 }
 
-export default function CreateRepositoryModal({
+export default function EditRepositoryModal({
+  repository,
   isOpen,
   onClose,
   onSave,
-}: CreateRepositoryModalProps) {
-  const [name, setName] = useState('');
-  const [localPath, setLocalPath] = useState('');
-  const [repoUrl, setRepoUrl] = useState('');
-  const [providerId, setProviderId] = useState('');
+}: EditRepositoryModalProps) {
+  const [name, setName] = useState(repository.name);
+  const [localPath, setLocalPath] = useState(repository.localPath);
+  const [repoUrl, setRepoUrl] = useState(repository.repoUrl || '');
+  const [providerId, setProviderId] = useState(repository.providerId || '');
   const [providers, setProviders] = useState<Provider[]>([]);
   const [detectedProvider, setDetectedProvider] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update form when repository prop changes
+  useEffect(() => {
+    setName(repository.name);
+    setLocalPath(repository.localPath);
+    setRepoUrl(repository.repoUrl || '');
+    setProviderId(repository.providerId || '');
+  }, [repository]);
 
   // Fetch providers on mount
   useEffect(() => {
@@ -66,23 +85,15 @@ export default function CreateRepositoryModal({
     }
 
     setDetectedProvider(detected);
-
-    // Auto-select the detected provider if not manually selected
-    if (detected && !providerId) {
-      const provider = providers.find(p => p.code === detected);
-      if (provider) {
-        setProviderId(provider.id);
-      }
-    }
-  }, [repoUrl, providers, providerId]);
+  }, [repoUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/repos', {
-        method: 'POST',
+      const response = await fetch(`/api/repos/${repository.id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -95,19 +106,14 @@ export default function CreateRepositoryModal({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create repository');
+        throw new Error('Failed to update repository');
       }
 
-      setName('');
-      setLocalPath('');
-      setRepoUrl('');
-      setProviderId('');
-      setDetectedProvider('');
       onSave();
       onClose();
     } catch (error) {
-      console.error('Error creating repository:', error);
-      alert('Failed to create repository');
+      console.error('Error updating repository:', error);
+      alert('Failed to update repository');
     } finally {
       setIsSubmitting(false);
     }
@@ -118,7 +124,7 @@ export default function CreateRepositoryModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Create Repository</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Edit Repository</h2>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -206,7 +212,7 @@ export default function CreateRepositoryModal({
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating...' : 'Create Repository'}
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

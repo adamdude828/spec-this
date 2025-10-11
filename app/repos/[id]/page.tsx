@@ -1,15 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import EpicCard from '@/app/components/EpicCard';
 import CreateEpicModal from '@/app/components/CreateEpicModal';
+import EditRepositoryModal from '@/app/components/EditRepositoryModal';
+import FileLink from '@/app/components/FileLink';
+
+interface Provider {
+  id: string;
+  name: string;
+  code: 'github' | 'azure_devops' | 'gitlab' | 'bitbucket';
+  baseUrlPattern: string;
+  fileUrlPattern: string;
+  lineUrlPattern: string;
+}
 
 interface Repository {
   id: string;
   name: string;
   localPath: string;
   repoUrl: string | null;
+  providerId: string | null;
+  provider: Provider | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +61,7 @@ export default function RepoDetailPage({
   const [epics, setEpics] = useState<Epic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateEpicModalOpen, setIsCreateEpicModalOpen] = useState(false);
+  const [isEditRepoModalOpen, setIsEditRepoModalOpen] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
   const [indexMessage, setIndexMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [graphStats, setGraphStats] = useState<GraphStats | null>(null);
@@ -58,7 +72,7 @@ export default function RepoDetailPage({
     params.then((p) => setId(p.id));
   }, [params]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!id) return;
 
     try {
@@ -81,14 +95,9 @@ export default function RepoDetailPage({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-    fetchGraphStats();
   }, [id]);
 
-  const fetchGraphStats = async () => {
+  const fetchGraphStats = useCallback(async () => {
     if (!id) return;
 
     setIsLoadingStats(true);
@@ -103,7 +112,12 @@ export default function RepoDetailPage({
     } finally {
       setIsLoadingStats(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchData();
+    fetchGraphStats();
+  }, [fetchData, fetchGraphStats]);
 
   const handleEpicUpdate = () => {
     fetchData();
@@ -196,13 +210,33 @@ export default function RepoDetailPage({
       <div className="bg-white rounded-lg shadow p-6 mb-6 border border-gray-200">
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900 flex-1">{repo.name}</h1>
-          <button
-            onClick={handleIndexCodebase}
-            disabled={isIndexing}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
-          >
-            {isIndexing ? (
-              <>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsEditRepoModalOpen(true)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              Edit
+            </button>
+            <button
+              onClick={handleIndexCodebase}
+              disabled={isIndexing}
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+            >
+              {isIndexing ? (
+                <>
                 <svg
                   className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                   xmlns="http://www.w3.org/2000/svg"
@@ -224,9 +258,9 @@ export default function RepoDetailPage({
                   />
                 </svg>
                 Indexing...
-              </>
-            ) : (
-              <>
+                </>
+              ) : (
+                <>
                 <svg
                   className="w-4 h-4 mr-2"
                   fill="none"
@@ -245,8 +279,9 @@ export default function RepoDetailPage({
             )}
           </button>
         </div>
+      </div>
 
-        {/* Success/Error message */}
+      {/* Success/Error message */}
         {indexMessage && (
           <div
             className={`mb-4 p-3 rounded-md text-sm ${
@@ -301,6 +336,28 @@ export default function RepoDetailPage({
               >
                 {repo.repoUrl}
               </a>
+            </div>
+          )}
+
+          {repo.provider && (
+            <div className="flex items-center">
+              <svg
+                className="w-4 h-4 mr-2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                />
+              </svg>
+              <span className="font-medium mr-2">Provider:</span>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {repo.provider.name}
+              </span>
             </div>
           )}
         </div>
@@ -393,10 +450,10 @@ export default function RepoDetailPage({
               </div>
             </div>
           </div>
-          </div>
+        </div>
 
-          {/* Expandable Details */}
-          {isGraphExpanded && (
+        {/* Expandable Details */}
+        {isGraphExpanded && (
             <div className="px-6 pb-6 border-t border-gray-100 pt-6">
               {/* Language Breakdown */}
               {Object.keys(graphStats.basicStats.languageBreakdown).length > 0 && (
@@ -424,9 +481,14 @@ export default function RepoDetailPage({
                       key={idx}
                       className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200 text-sm"
                     >
-                      <code className="text-gray-700 truncate flex-1 mr-2">
-                        {file.relativePath}
-                      </code>
+                      <div className="text-gray-700 truncate flex-1 mr-2">
+                        <FileLink
+                          filePath={file.relativePath}
+                          repoUrl={repo.repoUrl}
+                          provider={repo.provider}
+                          className="text-xs"
+                        />
+                      </div>
                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
                         {file.count} imports
                       </span>
@@ -448,9 +510,14 @@ export default function RepoDetailPage({
                       key={idx}
                       className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200 text-sm"
                     >
-                      <code className="text-gray-700 truncate flex-1 mr-2">
-                        {file.relativePath}
-                      </code>
+                      <div className="text-gray-700 truncate flex-1 mr-2">
+                        <FileLink
+                          filePath={file.relativePath}
+                          repoUrl={repo.repoUrl}
+                          provider={repo.provider}
+                          className="text-xs"
+                        />
+                      </div>
                       <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium whitespace-nowrap">
                         {file.count} deps
                       </span>
@@ -505,7 +572,12 @@ export default function RepoDetailPage({
                                 />
                               </svg>
                             )}
-                            <code className="text-yellow-900">{file}</code>
+                            <FileLink
+                              filePath={file}
+                              repoUrl={repo.repoUrl}
+                              provider={repo.provider}
+                              className="text-yellow-900 text-xs"
+                            />
                           </div>
                         ))}
                       </div>
@@ -525,7 +597,12 @@ export default function RepoDetailPage({
                       key={idx}
                       className="p-2 bg-gray-50 rounded border border-gray-200 text-sm"
                     >
-                      <code className="text-gray-600">{file.relativePath}</code>
+                      <FileLink
+                        filePath={file.relativePath}
+                        repoUrl={repo.repoUrl}
+                        provider={repo.provider}
+                        className="text-gray-600 text-xs"
+                      />
                     </div>
                   ))}
                   {graphStats.orphanedFiles.length > 10 && (
@@ -619,6 +696,15 @@ export default function RepoDetailPage({
         onClose={() => setIsCreateEpicModalOpen(false)}
         onSave={handleEpicUpdate}
       />
+
+      {repo && (
+        <EditRepositoryModal
+          repository={repo}
+          isOpen={isEditRepoModalOpen}
+          onClose={() => setIsEditRepoModalOpen(false)}
+          onSave={fetchData}
+        />
+      )}
     </div>
   );
 }

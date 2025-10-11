@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { neo4j as neo4jConnection, runWriteTransaction } from "./neo4j.ts";
 
 /**
@@ -110,8 +111,8 @@ export async function getGraphStats(): Promise<{
     `);
 
     const filesByLanguage: Record<string, number> = {};
-    langResult.records.forEach((record: any) => {
-      const language = record.get("language");
+    langResult.records.forEach((record) => {
+      const language = record.get("language") as string;
       const count = record.get("count").toNumber();
       filesByLanguage[language] = count;
     });

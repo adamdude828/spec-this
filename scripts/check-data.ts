@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { config } from 'dotenv';
 import { db } from '../lib/db/index.js';
 import { epics, repositories } from '../lib/db/schema.js';

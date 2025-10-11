@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { repositories } from '@/lib/db/schema';
+import { repositories, providers } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { detectProviderFromUrl } from '@/lib/services/url-builder';
 
 export async function GET(
   request: Request,
@@ -12,6 +13,9 @@ export async function GET(
 
     const repo = await db.query.repositories.findFirst({
       where: eq(repositories.id, id),
+      with: {
+        provider: true,
+      },
     });
 
     if (!repo) {
@@ -32,7 +36,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, localPath, repoUrl } = body;
+    const { name, localPath, repoUrl, providerId } = body;
 
     const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
@@ -40,7 +44,23 @@ export async function PATCH(
 
     if (name !== undefined) updateData.name = name;
     if (localPath !== undefined) updateData.localPath = localPath;
-    if (repoUrl !== undefined) updateData.repoUrl = repoUrl;
+    if (repoUrl !== undefined) {
+      updateData.repoUrl = repoUrl;
+
+      // Auto-detect provider if repoUrl changed but providerId not explicitly set
+      if (providerId === undefined && repoUrl) {
+        const detectedProviderCode = detectProviderFromUrl(repoUrl);
+        if (detectedProviderCode) {
+          const detectedProvider = await db.query.providers.findFirst({
+            where: eq(providers.code, detectedProviderCode),
+          });
+          if (detectedProvider) {
+            updateData.providerId = detectedProvider.id;
+          }
+        }
+      }
+    }
+    if (providerId !== undefined) updateData.providerId = providerId;
 
     const [updatedRepo] = await db
       .update(repositories)
@@ -52,7 +72,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Repository not found' }, { status: 404 });
     }
 
-    return NextResponse.json(updatedRepo);
+    // Fetch with provider details
+    const repoWithProvider = await db.query.repositories.findFirst({
+      where: eq(repositories.id, id),
+      with: {
+        provider: true,
+      },
+    });
+
+    return NextResponse.json(repoWithProvider);
   } catch (error) {
     console.error('Error updating repository:', error);
     return NextResponse.json({ error: 'Failed to update repository' }, { status: 500 });

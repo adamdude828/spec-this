@@ -4,11 +4,17 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Type for Neo4j integer objects
+interface Neo4jInteger {
+  low: number;
+  high: number;
+}
+
 // Helper to convert Neo4j integers to JavaScript numbers
-function toNumber(value: any): number {
+function toNumber(value: number | Neo4jInteger | unknown): number {
   if (typeof value === "number") return value;
   if (value && typeof value === "object" && "low" in value) {
-    return value.low;
+    return (value as Neo4jInteger).low;
   }
   return 0;
 }

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { config } from 'dotenv';
 import { sql } from 'drizzle-orm';
 import { db } from '../lib/db/index.js';

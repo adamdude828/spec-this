@@ -13,9 +13,11 @@ export default defineConfig({
         'node_modules/',
         'dist/',
         'drizzle/',
+        '.next/',
         '*.config.*',
         '**/*.d.ts',
         'app/**',
+        '**/__tests__/**',
       ],
     },
     // Use different includes based on environment

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Breadcrumb from '@/app/components/Breadcrumb';
 import TaskCard from '@/app/components/TaskCard';
 import EditStoryModal from '@/app/components/EditStoryModal';
@@ -65,7 +65,7 @@ export default function StoryDetailPage({
     params.then((p) => setId(p.id));
   }, [params]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!id) return;
 
     try {
@@ -93,11 +93,11 @@ export default function StoryDetailPage({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [fetchData]);
 
   const handleTaskUpdate = () => {
     fetchData();
