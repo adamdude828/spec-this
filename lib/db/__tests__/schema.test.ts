@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { epics, stories, tasks, epicStatusEnum, storyStatusEnum, taskStatusEnum, priorityEnum } from '../schema';
+import { epics, stories, plannedFileChanges, epicStatusEnum, storyStatusEnum, fileChangeTypeEnum, fileChangeStatusEnum, priorityEnum } from '../schema';
 
 describe('Database Schema', () => {
   describe('Epics Table', () => {
@@ -38,20 +38,21 @@ describe('Database Schema', () => {
     });
   });
 
-  describe('Tasks Table', () => {
+  describe('Planned File Changes Table', () => {
     it('should have correct table name', () => {
-      expect(tasks).toBeDefined();
+      expect(plannedFileChanges).toBeDefined();
     });
 
     it('should have all required fields', () => {
-      const taskFields = Object.keys(tasks);
-      expect(taskFields).toContain('id');
-      expect(taskFields).toContain('storyId');
-      expect(taskFields).toContain('title');
-      expect(taskFields).toContain('description');
-      expect(taskFields).toContain('status');
-      expect(taskFields).toContain('orderIndex');
-      expect(taskFields).toContain('completedAt');
+      const changeFields = Object.keys(plannedFileChanges);
+      expect(changeFields).toContain('id');
+      expect(changeFields).toContain('storyId');
+      expect(changeFields).toContain('filePath');
+      expect(changeFields).toContain('changeType');
+      expect(changeFields).toContain('description');
+      expect(changeFields).toContain('status');
+      expect(changeFields).toContain('orderIndex');
+      expect(changeFields).toContain('completedAt');
     });
   });
 
@@ -64,8 +65,12 @@ describe('Database Schema', () => {
       expect(storyStatusEnum).toBeDefined();
     });
 
-    it('should define task status enum', () => {
-      expect(taskStatusEnum).toBeDefined();
+    it('should define file change type enum', () => {
+      expect(fileChangeTypeEnum).toBeDefined();
+    });
+
+    it('should define file change status enum', () => {
+      expect(fileChangeStatusEnum).toBeDefined();
     });
 
     it('should define priority enum', () => {

@@ -5,7 +5,8 @@ import { relations } from 'drizzle-orm';
 export const epicStatusEnum = pgEnum('epic_status', ['draft', 'active', 'completed', 'archived']);
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high', 'critical']);
 export const storyStatusEnum = pgEnum('story_status', ['draft', 'ready', 'in_progress', 'review', 'completed']);
-export const taskStatusEnum = pgEnum('task_status', ['todo', 'in_progress', 'blocked', 'completed']);
+export const fileChangeTypeEnum = pgEnum('file_change_type', ['create', 'modify', 'delete']);
+export const fileChangeStatusEnum = pgEnum('file_change_status', ['planned', 'in_progress', 'completed', 'failed']);
 export const providerCodeEnum = pgEnum('provider_code', ['github', 'azure_devops', 'gitlab', 'bitbucket']);
 
 // Providers Table
@@ -58,13 +59,29 @@ export const stories = pgTable('stories', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-// Tasks Table
-export const tasks = pgTable('tasks', {
+// Planned File Changes Table
+// Tracks specific file modifications planned as part of a Story
+// Links to files in the codebase (can reference Neo4j file graph for dependencies)
+export const plannedFileChanges = pgTable('planned_file_changes', {
   id: uuid('id').primaryKey().defaultRandom(),
   storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  description: text('description'),
-  status: taskStatusEnum('status').notNull().default('todo'),
+
+  // File information
+  filePath: text('file_path').notNull(), // Relative path from repo root
+  changeType: fileChangeTypeEnum('change_type').notNull(),
+
+  // Change description and planning
+  description: text('description'), // What changes are being made and why
+  expectedChanges: text('expected_changes'), // Code snippets, detailed changes expected
+
+  // Status tracking
+  status: fileChangeStatusEnum('status').notNull().default('planned'),
+
+  // Snapshots (optional, if not relying solely on Neo4j)
+  beforeSnapshot: text('before_snapshot'), // File content before change
+  afterSnapshot: text('after_snapshot'), // Expected/actual content after change
+
+  // Ordering and timestamps
   orderIndex: integer('order_index').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -97,12 +114,12 @@ export const storiesRelations = relations(stories, ({ one, many }) => ({
     fields: [stories.epicId],
     references: [epics.id],
   }),
-  tasks: many(tasks),
+  plannedFileChanges: many(plannedFileChanges),
 }));
 
-export const tasksRelations = relations(tasks, ({ one }) => ({
+export const plannedFileChangesRelations = relations(plannedFileChanges, ({ one }) => ({
   story: one(stories, {
-    fields: [tasks.storyId],
+    fields: [plannedFileChanges.storyId],
     references: [stories.id],
   }),
 }));
