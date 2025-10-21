@@ -1,3 +1,5 @@
+-- Custom SQL migration file, put your code below! --
+
 -- Create new enums for file changes
 CREATE TYPE "public"."file_change_type" AS ENUM('create', 'modify', 'delete');--> statement-breakpoint
 CREATE TYPE "public"."file_change_status" AS ENUM('planned', 'in_progress', 'completed', 'failed');--> statement-breakpoint
