@@ -141,6 +141,31 @@ function GraphContent({
     linkElement.click();
   }, [filteredNodes, filteredEdges, epic]);
 
+  const handleFocusNode = useCallback((nodeId: string) => {
+    // Find the node
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    // Check if it has planned changes
+    const nodeData = node.data as unknown as PlannedChangeNodeData;
+    if (nodeData.plannedChanges && nodeData.plannedChanges.length > 0) {
+      setSelectedPlannedChanges(nodeData);
+      setShowPlannedChangesPanel(true);
+      setSelectedNode(null);
+    } else {
+      setSelectedNode(node);
+      setShowPlannedChangesPanel(false);
+    }
+
+    // Focus on the node with zoom
+    fitView({
+      duration: 500,
+      padding: 0.3,
+      nodes: [{ id: nodeId }],
+      maxZoom: 1.5,
+    });
+  }, [nodes, fitView]);
+
   const handleClosePlannedChangesPanel = useCallback(() => {
     setShowPlannedChangesPanel(false);
     setSelectedPlannedChanges(null);
@@ -182,6 +207,8 @@ function GraphContent({
         onExport={handleExport}
         onToggleFullscreen={onToggleFullscreen}
         isFullscreen={isFullscreen}
+        allNodes={initialNodes}
+        onFocusNode={handleFocusNode}
       />
       <div className="flex-1 relative">
         <ReactFlow
@@ -215,6 +242,8 @@ function GraphContent({
                 <li>• <kbd className="px-1 bg-gray-100 rounded">F</kbd> - Fit to view</li>
                 <li>• <kbd className="px-1 bg-gray-100 rounded">F11</kbd> - Fullscreen</li>
                 <li>• <kbd className="px-1 bg-gray-100 rounded">Esc</kbd> - Close / Exit</li>
+                <li>• <kbd className="px-1 bg-gray-100 rounded">↑↓</kbd> - Navigate search results</li>
+                <li>• <kbd className="px-1 bg-gray-100 rounded">Enter</kbd> - Focus selected file</li>
                 <li>• Scroll to zoom</li>
                 <li>• Drag to pan</li>
               </ul>

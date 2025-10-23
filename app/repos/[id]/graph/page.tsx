@@ -129,6 +129,23 @@ function GraphContent({
     linkElement.click();
   }, [filteredNodes, filteredEdges, repo]);
 
+  const handleFocusNode = useCallback((nodeId: string) => {
+    // Find the node
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    // Highlight the node temporarily
+    setSelectedNode(node);
+
+    // Focus on the node with zoom
+    fitView({
+      duration: 500,
+      padding: 0.3,
+      nodes: [{ id: nodeId }],
+      maxZoom: 1.5,
+    });
+  }, [nodes, fitView]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -163,6 +180,8 @@ function GraphContent({
         onExport={handleExport}
         onToggleFullscreen={onToggleFullscreen}
         isFullscreen={isFullscreen}
+        allNodes={initialNodes}
+        onFocusNode={handleFocusNode}
       />
       <div className="flex-1 relative">
         <ReactFlow
@@ -196,6 +215,8 @@ function GraphContent({
                 <li>• <kbd className="px-1 bg-gray-100 rounded">F</kbd> - Fit to view</li>
                 <li>• <kbd className="px-1 bg-gray-100 rounded">F11</kbd> - Fullscreen</li>
                 <li>• <kbd className="px-1 bg-gray-100 rounded">Esc</kbd> - Close / Exit</li>
+                <li>• <kbd className="px-1 bg-gray-100 rounded">↑↓</kbd> - Navigate search results</li>
+                <li>• <kbd className="px-1 bg-gray-100 rounded">Enter</kbd> - Focus selected file</li>
                 <li>• Scroll to zoom</li>
                 <li>• Drag to pan</li>
               </ul>

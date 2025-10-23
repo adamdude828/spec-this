@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { Node } from '@xyflow/react';
 
 interface GraphToolbarProps {
   onSearch: (query: string) => void;
@@ -10,6 +11,8 @@ interface GraphToolbarProps {
   onExport: () => void;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
+  allNodes: Node[];
+  onFocusNode: (nodeId: string) => void;
 }
 
 export default function GraphToolbar({
@@ -20,16 +23,98 @@ export default function GraphToolbar({
   onExport,
   onToggleFullscreen,
   isFullscreen,
+  allNodes,
+  onFocusNode,
 }: GraphToolbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Filter nodes based on search query
+  const searchSuggestions = searchQuery
+    ? allNodes.filter((node) => {
+        const label = (node.data as { label?: string })?.label || '';
+        return label.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : [];
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
     onSearch(query);
+    setShowSuggestions(true);
+    setSelectedSuggestionIndex(0);
   };
+
+  const handleSuggestionClick = (node: Node) => {
+    const label = (node.data as { label?: string })?.label || '';
+    setSearchQuery(label);
+    setShowSuggestions(false);
+    onFocusNode(node.id);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || searchSuggestions.length === 0) {
+      if (e.key === 'ArrowDown' && searchQuery) {
+        setShowSuggestions(true);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex((prev) =>
+          prev < searchSuggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : prev));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (searchSuggestions[selectedSuggestionIndex]) {
+          handleSuggestionClick(searchSuggestions[selectedSuggestionIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowSuggestions(false);
+        break;
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as HTMLElement) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as HTMLElement)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Scroll selected suggestion into view
+  useEffect(() => {
+    if (showSuggestions && suggestionsRef.current) {
+      const selectedElement = suggestionsRef.current.children[selectedSuggestionIndex] as HTMLElement;
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [selectedSuggestionIndex, showSuggestions]);
 
   const handleTypeToggle = (type: string) => {
     const newTypes = selectedTypes.includes(type)
@@ -44,20 +129,25 @@ export default function GraphToolbar({
     setSearchQuery('');
     onFilterByType([]);
     onSearch('');
+    setShowSuggestions(false);
   };
 
   return (
     <div className="bg-white border-b border-gray-200 px-6 py-3">
       <div className="flex items-center gap-4">
         {/* Search */}
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 max-w-md relative">
           <div className="relative">
             <input
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => searchQuery && setShowSuggestions(true)}
               placeholder="Search files..."
               className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoComplete="off"
             />
             <svg
               className="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
@@ -73,6 +163,42 @@ export default function GraphToolbar({
               />
             </svg>
           </div>
+
+          {/* Search Suggestions Dropdown */}
+          {showSuggestions && searchSuggestions.length > 0 && (
+            <div
+              ref={suggestionsRef}
+              className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-y-auto"
+            >
+              {searchSuggestions.map((node, index) => {
+                const label = (node.data as { label?: string })?.label || '';
+                const language = (node.data as { language?: string })?.language || '';
+                return (
+                  <button
+                    key={node.id}
+                    onClick={() => handleSuggestionClick(node)}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-blue-50 flex items-center justify-between ${
+                      index === selectedSuggestionIndex ? 'bg-blue-100' : ''
+                    }`}
+                  >
+                    <span className="truncate flex-1">{label}</span>
+                    {language && (
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                        {language}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* No results message */}
+          {showSuggestions && searchQuery && searchSuggestions.length === 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-4">
+              <p className="text-sm text-gray-500">No files found matching "{searchQuery}"</p>
+            </div>
+          )}
         </div>
 
         {/* Filters Toggle */}
