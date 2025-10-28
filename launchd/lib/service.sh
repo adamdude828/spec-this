@@ -3,7 +3,7 @@
 # This module is sourced by the main script - do not run directly
 
 LAUNCHD_DIR="${HOME}/Library/LaunchAgents"
-LAUNCHCTL_TIMEOUT=10
+LAUNCHCTL_TIMEOUT=5  # Reduced timeout - these commands should be fast
 
 # Ensure LaunchAgents directory exists
 ensure_launchd_dir() {
@@ -65,25 +65,35 @@ install_project() {
     print_debug "Attempting to unload any existing service..."
     launchctl bootout "gui/$(id -u)/${label}" 2>/dev/null || true
 
-    # Load the new service
-    print_command "launchctl load \"$plist_file\""
-    if ! run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl load \"$plist_file\" 2>&1"; then
-        print_warning "launchctl load timed out or failed (this may be OK)"
+    # Bootstrap the service (modern approach, replaces load)
+    print_command "launchctl bootstrap gui/$(id -u) \"$plist_file\""
+    if ! run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl bootstrap gui/$(id -u) \"$plist_file\" 2>/dev/null"; then
+        # If bootstrap fails, try load (older macOS)
+        print_debug "Bootstrap failed, trying load..."
+        run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl load \"$plist_file\" 2>/dev/null" || true
     fi
 
     # Enable the service
-    print_command "launchctl enable \"gui/$(id -u)/${label}\""
-    if ! run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl enable \"gui/$(id -u)/${label}\" 2>&1"; then
-        print_warning "launchctl enable timed out or failed"
+    print_command "launchctl enable gui/$(id -u)/${label}"
+    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl enable gui/$(id -u)/${label} 2>/dev/null" || true
+
+    # Kickstart the service (start it now)
+    print_command "launchctl kickstart -k gui/$(id -u)/${label}"
+    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl kickstart -k gui/$(id -u)/${label} 2>/dev/null" || true
+
+    # Wait a moment for service to start
+    sleep 1
+
+    # Verify the service is running
+    print_debug "Verifying service status..."
+    if launchctl list | grep -q "$label"; then
+        print_success "$project_name installed and started"
+        print_info "Service is running"
+    else
+        print_warning "$project_name installed but may not be running"
+        print_info "Check logs for details: ./launchd/mcp-service.sh logs $project_name"
     fi
 
-    # Kickstart the service
-    print_command "launchctl kickstart -k \"gui/$(id -u)/${label}\""
-    if ! run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl kickstart -k \"gui/$(id -u)/${label}\" 2>&1"; then
-        print_warning "launchctl kickstart timed out or failed"
-    fi
-
-    print_success "$project_name installed and started"
     print_info "Plist: $plist_file"
     print_info "Logs: $(expand_path "$(read_projects "$config_file" | jq -r '.global.logDirectory')")/${project_name}/"
 }
@@ -111,11 +121,11 @@ uninstall_project() {
     # Stop and unload the service
     print_debug "Stopping and unloading service..."
 
-    print_command "launchctl bootout \"gui/$(id -u)/${label}\""
-    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl bootout \"gui/$(id -u)/${label}\" 2>&1" || true
+    print_command "launchctl bootout gui/$(id -u)/${label}"
+    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl bootout gui/$(id -u)/${label} 2>/dev/null" || true
 
-    print_command "launchctl disable \"gui/$(id -u)/${label}\""
-    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl disable \"gui/$(id -u)/${label}\" 2>&1" || true
+    print_command "launchctl disable gui/$(id -u)/${label}"
+    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl disable gui/$(id -u)/${label} 2>/dev/null" || true
 
     # Remove plist file
     if [ -f "$plist_file" ]; then
@@ -146,9 +156,13 @@ start_project() {
     local label=$(echo "$project" | jq -r '.label')
 
     print_debug "Label: $label"
-    print_command "launchctl kickstart -k \"gui/$(id -u)/${label}\""
+    print_command "launchctl kickstart -k gui/$(id -u)/${label}"
 
-    if run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl kickstart -k \"gui/$(id -u)/${label}\" 2>&1"; then
+    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl kickstart -k gui/$(id -u)/${label} 2>/dev/null" || true
+
+    # Verify it started
+    sleep 1
+    if launchctl list | grep -q "$label"; then
         print_success "$project_name started"
     else
         print_error "$project_name failed to start (check logs)"
@@ -173,13 +187,10 @@ stop_project() {
     local label=$(echo "$project" | jq -r '.label')
 
     print_debug "Label: $label"
-    print_command "launchctl kill SIGTERM \"gui/$(id -u)/${label}\""
+    print_command "launchctl kill SIGTERM gui/$(id -u)/${label}"
 
-    if run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl kill SIGTERM \"gui/$(id -u)/${label}\" 2>&1" || true; then
-        print_success "$project_name stopped"
-    else
-        print_warning "$project_name may not have stopped cleanly"
-    fi
+    run_with_timeout "${LAUNCHCTL_TIMEOUT}s" "launchctl kill SIGTERM gui/$(id -u)/${label} 2>/dev/null" || true
+    print_success "$project_name stopped"
 }
 
 # Restart a project
