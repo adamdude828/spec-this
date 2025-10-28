@@ -1,0 +1,15 @@
+{
+  "projects": [
+    {
+      "name": "spec-this",
+      "label": "com.specthis.mcp",
+      "projectPath": "/path/to/spec-this",
+      "enabled": true,
+      "description": "Spec-This MCP Server - AI-first specification management"
+    }
+  ],
+  "global": {
+    "logDirectory": "~/Library/Logs/mcp-servers",
+    "nodePath": "/usr/local/bin/node"
+  }
+}

@@ -118,6 +118,32 @@ npm run build:mcp
 npm run start:mcp
 ```
 
+### Running as Background Service (macOS)
+
+For production use, the MCP server can run as a persistent background service that auto-starts on login and auto-restarts on crashes. See `launchd/README.md` for complete documentation.
+
+**Quick Start:**
+```bash
+# 1. Configure your project path in launchd/projects.json
+# 2. Build and install
+npm run build:mcp
+npm run service:install
+
+# Common commands
+npm run service:status          # Check if running
+npm run service:logs            # View logs
+npm run service:logs:follow     # Follow logs in real-time
+npm run service:restart         # Restart after code changes
+npm run service:stop            # Stop service
+npm run service:start           # Start service
+npm run service:uninstall       # Remove service
+```
+
+**Managing Multiple Projects:**
+The service system supports running multiple MCP servers simultaneously. Edit `launchd/projects.json` to add additional projects, then run `npm run service:install` to install all enabled services.
+
+Logs are stored at: `~/Library/Logs/mcp-servers/{project-name}/`
+
 ## Development Workflow
 
 ### Setup
