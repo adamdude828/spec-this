@@ -24,7 +24,8 @@
     "service:restart": "launchd/mcp-service.sh restart spec-this",
     "service:status": "launchd/mcp-service.sh status spec-this",
     "service:logs": "launchd/mcp-service.sh logs spec-this",
-    "service:logs:follow": "launchd/mcp-service.sh logs spec-this -f"
+    "service:logs:follow": "launchd/mcp-service.sh logs spec-this -f",
+    "service:diagnose": "launchd/diagnose.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",

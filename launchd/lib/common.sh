@@ -100,40 +100,34 @@ run_with_timeout() {
     print_command "$cmd"
     print_debug "Timeout: ${timeout_sec}s"
 
-    # Disable job control to suppress "Terminated" messages
-    set +m
+    # Run in background and kill if it takes too long (suppress job messages)
+    (
+        bash -c "$cmd" &
+        local pid=$!
 
-    # Run in background and kill if it takes too long
-    bash -c "$cmd" &
-    local pid=$!
+        # Wait for the command with timeout (check every 0.5 seconds)
+        local iterations=$((timeout_sec * 2))  # 0.5 seconds per iteration
+        local count=0
 
-    # Wait for the command with timeout (check every 0.5 seconds)
-    local iterations=$((timeout_sec * 2))  # 0.5 seconds per iteration
-    local count=0
+        while kill -0 "$pid" 2>/dev/null && [ $count -lt $iterations ]; do
+            sleep 0.5
+            count=$((count + 1))
+        done
 
-    while kill -0 "$pid" 2>/dev/null && [ $count -lt $iterations ]; do
-        sleep 0.5
-        count=$((count + 1))
-    done
+        # If still running after timeout, kill it
+        if kill -0 "$pid" 2>/dev/null; then
+            print_debug "Command timed out after ${timeout_sec}s, killing process $pid"
+            kill -TERM "$pid" 2>/dev/null || true
+            sleep 0.5
+            kill -KILL "$pid" 2>/dev/null || true
+            wait "$pid" 2>/dev/null || true
+            exit 124  # Standard timeout exit code
+        fi
 
-    # If still running after timeout, kill it
-    if kill -0 "$pid" 2>/dev/null; then
-        print_debug "Command timed out after ${timeout_sec}s, killing process $pid"
-        kill -TERM "$pid" 2>/dev/null || true
-        sleep 0.5
-        kill -KILL "$pid" 2>/dev/null || true
-        wait "$pid" 2>/dev/null || true
-        # Re-enable job control
-        set -m
-        return 124  # Standard timeout exit code
-    fi
+        # Get exit code
+        wait "$pid" 2>/dev/null
+        exit $?
+    )
 
-    # Get exit code
-    wait "$pid" 2>/dev/null
-    local exit_code=$?
-
-    # Re-enable job control
-    set -m
-
-    return $exit_code
+    return $?
 }
