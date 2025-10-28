@@ -18,32 +18,32 @@ LOG_FILE=${LOG_FILE:-}
 # Helper functions
 print_info() {
     local msg="${BLUE}ℹ${NC} $1"
-    echo -e "$msg"
+    echo -e "$msg" >&2
     [ -n "$LOG_FILE" ] && echo -e "$msg" >> "$LOG_FILE" || true
 }
 
 print_success() {
     local msg="${GREEN}✓${NC} $1"
-    echo -e "$msg"
+    echo -e "$msg" >&2
     [ -n "$LOG_FILE" ] && echo -e "$msg" >> "$LOG_FILE" || true
 }
 
 print_warning() {
     local msg="${YELLOW}⚠${NC} $1"
-    echo -e "$msg"
+    echo -e "$msg" >&2
     [ -n "$LOG_FILE" ] && echo -e "$msg" >> "$LOG_FILE" || true
 }
 
 print_error() {
     local msg="${RED}✗${NC} $1"
-    echo -e "$msg"
+    echo -e "$msg" >&2
     [ -n "$LOG_FILE" ] && echo -e "$msg" >> "$LOG_FILE" || true
 }
 
 print_debug() {
     if [ "$VERBOSE" = true ]; then
         local msg="${CYAN}[DEBUG]${NC} $1"
-        echo -e "$msg"
+        echo -e "$msg" >&2
         [ -n "$LOG_FILE" ] && echo -e "$msg" >> "$LOG_FILE" || true
     fi
 }
@@ -51,7 +51,7 @@ print_debug() {
 print_command() {
     if [ "$VERBOSE" = true ]; then
         local msg="${CYAN}[CMD]${NC} $1"
-        echo -e "$msg"
+        echo -e "$msg" >&2
         [ -n "$LOG_FILE" ] && echo -e "$msg" >> "$LOG_FILE" || true
     fi
 }
