@@ -100,6 +100,9 @@ run_with_timeout() {
     print_command "$cmd"
     print_debug "Timeout: ${timeout_sec}s"
 
+    # Disable job control to suppress "Terminated" messages
+    set +m
+
     # Run in background and kill if it takes too long
     bash -c "$cmd" &
     local pid=$!
@@ -120,11 +123,17 @@ run_with_timeout() {
         sleep 0.5
         kill -KILL "$pid" 2>/dev/null || true
         wait "$pid" 2>/dev/null || true
+        # Re-enable job control
+        set -m
         return 124  # Standard timeout exit code
     fi
 
     # Get exit code
     wait "$pid" 2>/dev/null
     local exit_code=$?
+
+    # Re-enable job control
+    set -m
+
     return $exit_code
 }
