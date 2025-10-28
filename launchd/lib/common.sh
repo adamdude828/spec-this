@@ -88,18 +88,43 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Run command with timeout
+# Run command with timeout (macOS compatible)
 run_with_timeout() {
-    local timeout=$1
+    local timeout_spec=$1
     shift
     local cmd="$@"
 
-    print_command "$cmd"
+    # Strip 's' suffix if present (e.g., "10s" -> "10")
+    local timeout_sec="${timeout_spec%s}"
 
-    if command_exists timeout; then
-        timeout "$timeout" bash -c "$cmd"
-    else
-        # Fallback without timeout
-        bash -c "$cmd"
+    print_command "$cmd"
+    print_debug "Timeout: ${timeout_sec}s"
+
+    # Run in background and kill if it takes too long
+    bash -c "$cmd" &
+    local pid=$!
+
+    # Wait for the command with timeout (check every 0.5 seconds)
+    local iterations=$((timeout_sec * 2))  # 0.5 seconds per iteration
+    local count=0
+
+    while kill -0 "$pid" 2>/dev/null && [ $count -lt $iterations ]; do
+        sleep 0.5
+        count=$((count + 1))
+    done
+
+    # If still running after timeout, kill it
+    if kill -0 "$pid" 2>/dev/null; then
+        print_debug "Command timed out after ${timeout_sec}s, killing process $pid"
+        kill -TERM "$pid" 2>/dev/null || true
+        sleep 0.5
+        kill -KILL "$pid" 2>/dev/null || true
+        wait "$pid" 2>/dev/null || true
+        return 124  # Standard timeout exit code
     fi
+
+    # Get exit code
+    wait "$pid" 2>/dev/null
+    local exit_code=$?
+    return $exit_code
 }
