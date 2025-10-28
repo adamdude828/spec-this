@@ -57,6 +57,19 @@ npm run build:mcp    # Compile to dist/mcp-server.js
 npm run start:mcp    # Run compiled server
 ```
 
+**Background Service (macOS):**
+
+Run the MCP server as a persistent background service that auto-starts on login:
+
+```bash
+npm run service:install      # Install and start background service
+npm run service:status       # Check service status
+npm run service:logs         # View logs
+npm run service:restart      # Restart after code changes
+```
+
+See [docs/background-service.md](./docs/background-service.md) for complete setup and usage.
+
 ## Database Management
 
 ### Common Commands
@@ -111,7 +124,8 @@ The MCP server exposes tools for managing specifications:
 
 ## Documentation
 
-For detailed architecture, best practices, and development guidelines, see [CLAUDE.md](./CLAUDE.md).
+- **[CLAUDE.md](./CLAUDE.md)** - Detailed architecture, best practices, and development guidelines
+- **[docs/background-service.md](./docs/background-service.md)** - Running MCP server as a background service (macOS)
 
 ## Tech Stack
 
