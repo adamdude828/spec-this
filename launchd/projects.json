@@ -4,8 +4,9 @@
       "name": "spec-this",
       "label": "com.specthis.mcp",
       "projectPath": "~/spec-this",
+      "port": "3080",
       "enabled": true,
-      "description": "Spec-This MCP Server - AI-first specification management"
+      "description": "Spec-This Next.js app with integrated MCP server"
     }
   ],
   "global": {

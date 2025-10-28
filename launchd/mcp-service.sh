@@ -89,6 +89,7 @@ generate_plist() {
 
     local label=$(echo "$project" | jq -r '.label')
     local project_path=$(expand_path "$(echo "$project" | jq -r '.projectPath')")
+    local port=$(echo "$project" | jq -r '.port // "3080"')
     local log_dir=$(expand_path "$(read_projects | jq -r '.global.logDirectory')")
     local node_path=$(read_projects | jq -r '.global.nodePath // empty')
 
@@ -107,6 +108,7 @@ generate_plist() {
     plist_content="${plist_content//\{\{LABEL\}\}/$label}"
     plist_content="${plist_content//\{\{NODE_PATH\}\}/$node_path}"
     plist_content="${plist_content//\{\{PROJECT_PATH\}\}/$project_path}"
+    plist_content="${plist_content//\{\{PORT\}\}/$port}"
     plist_content="${plist_content//\{\{LOG_PATH\}\}/$project_log_dir}"
 
     echo "$plist_content"
@@ -127,11 +129,11 @@ install_project() {
 
     print_info "Installing $project_name..."
 
-    # Check if MCP server is built
+    # Check if Next.js is built
     local project_path=$(expand_path "$(echo "$project" | jq -r '.projectPath')")
-    if [ ! -f "${project_path}/dist/mcp-server.js" ]; then
-        print_warning "MCP server not built. Building now..."
-        (cd "$project_path" && npm run build:mcp)
+    if [ ! -d "${project_path}/.next" ]; then
+        print_warning "Next.js not built. Building now..."
+        (cd "$project_path" && npm run build)
     fi
 
     # Generate and write plist

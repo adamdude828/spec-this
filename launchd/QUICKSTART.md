@@ -1,6 +1,6 @@
-# Quick Start: MCP Background Service
+# Quick Start: Next.js Background Service
 
-Get your MCP server running as a macOS background service in 3 steps.
+Get Spec-This (Next.js app with integrated MCP server) running as a macOS background service in 3 steps.
 
 ## Prerequisites
 
@@ -22,8 +22,9 @@ Edit `launchd/projects.json` and update the `projectPath`:
       "name": "spec-this",
       "label": "com.specthis.mcp",
       "projectPath": "/Users/YOUR_USERNAME/path/to/spec-this",  ← UPDATE THIS
+      "port": "3080",
       "enabled": true,
-      "description": "Spec-This MCP Server"
+      "description": "Spec-This Next.js app with integrated MCP server"
     }
   ],
   "global": {
@@ -38,11 +39,11 @@ Edit `launchd/projects.json` and update the `projectPath`:
 ### 2. Build and Install
 
 ```bash
-npm run build:mcp
+npm run build
 npm run service:install
 ```
 
-Done! Your MCP server is now running in the background.
+Done! Spec-This is now running in the background (web UI on http://localhost:3080 and MCP server at /api/sse).
 
 ### 3. Verify It's Running
 
@@ -62,7 +63,7 @@ npm run service:logs
 npm run service:logs:follow
 
 # After making code changes
-npm run build:mcp
+npm run build
 npm run service:restart
 
 # Stop/start manually
@@ -78,7 +79,7 @@ npm run service:uninstall
 **Service won't start?**
 1. Check logs: `npm run service:logs`
 2. Verify database: Ensure `.env.local` has `DATABASE_URL`
-3. Test manually: `npm run start:mcp`
+3. Test manually: `npm run start` (visit http://localhost:3080)
 
 **Need to update Node.js path?**
 1. Check path: `which node`
@@ -128,16 +129,16 @@ cd launchd
 
 **Development** (manual, with hot reload):
 ```bash
-npm run dev:mcp
+npm run dev  # Next.js dev server with hot reload
 ```
 
 **Production** (background service):
 ```bash
-npm run build:mcp
+npm run build
 npm run service:install
 ```
 
-Use development mode when actively coding. Use production mode for always-on MCP server access.
+Use development mode when actively coding. Use production mode for always-on access to both the web UI and MCP server.
 
 ## Need Help?
 

@@ -1,24 +1,24 @@
-# MCP Background Service for macOS
+# Next.js Background Service for macOS
 
-This directory contains everything needed to run the Spec-This MCP server (and other MCP servers) as persistent background services on macOS using `launchd`.
+This directory contains everything needed to run Spec-This (Next.js app with integrated MCP server) and other similar projects as persistent background services on macOS using `launchd`.
 
 ## Features
 
 - **Auto-start on login**: Services start automatically when you log in
 - **Auto-restart on crash**: Services automatically restart if they crash
-- **Multiple projects**: Easily manage multiple MCP servers from a single configuration
+- **Multiple projects**: Easily manage multiple Next.js/MCP projects from a single configuration
 - **Centralized logging**: All logs in one location (`~/Library/Logs/mcp-servers/`)
 - **Simple management**: Easy-to-use CLI for install, start, stop, status, and logs
 - **Native macOS integration**: Uses launchd (the macOS standard for background services)
 
 ## Prerequisites
 
-1. **Node.js**: Ensure Node.js is installed (used to run the MCP server)
+1. **Node.js**: Ensure Node.js is installed (used to run Next.js)
 2. **jq**: JSON processor for configuration management
    ```bash
    brew install jq
    ```
-3. **Built MCP server**: Run `npm run build:mcp` in your project
+3. **Built Next.js app**: Run `npm run build` in your project
 
 ## Quick Start
 
@@ -33,8 +33,9 @@ Edit `launchd/projects.json` and update the `projectPath` to match your installa
       "name": "spec-this",
       "label": "com.specthis.mcp",
       "projectPath": "/Users/yourname/projects/spec-this",
+      "port": "3080",
       "enabled": true,
-      "description": "Spec-This MCP Server"
+      "description": "Spec-This Next.js app with integrated MCP server"
     }
   ],
   "global": {
@@ -46,10 +47,10 @@ Edit `launchd/projects.json` and update the `projectPath` to match your installa
 
 **Important**: Use absolute paths or `~` for home directory. Update `nodePath` if your Node.js is in a different location (check with `which node`).
 
-### 2. Build the MCP Server
+### 2. Build the Next.js App
 
 ```bash
-npm run build:mcp
+npm run build
 ```
 
 ### 3. Install and Start the Service
@@ -60,7 +61,7 @@ chmod +x mcp-service.sh
 ./mcp-service.sh install
 ```
 
-That's it! The MCP server is now running in the background and will auto-start on login.
+That's it! Spec-This is now running in the background (web UI on http://localhost:3080 and MCP server at /api/sse) and will auto-start on login.
 
 ## Usage
 
@@ -97,11 +98,11 @@ That's it! The MCP server is now running in the background and will auto-start o
 
 ### Development Workflow
 
-When you make changes to the MCP server code:
+When you make changes to the code:
 
 ```bash
-# 1. Rebuild the MCP server
-npm run build:mcp
+# 1. Rebuild the Next.js app
+npm run build
 
 # 2. Restart the service to pick up changes
 ./launchd/mcp-service.sh restart spec-this
@@ -112,7 +113,7 @@ npm run build:mcp
 
 ## Adding Additional Projects
 
-You can manage multiple MCP servers with this system. To add a new project:
+You can manage multiple Next.js/MCP projects with this system. To add a new project:
 
 ### 1. Add to Configuration
 
@@ -125,8 +126,9 @@ Edit `launchd/projects.json` and add a new project entry:
       "name": "spec-this",
       "label": "com.specthis.mcp",
       "projectPath": "/Users/yourname/projects/spec-this",
+      "port": "3080",
       "enabled": true,
-      "description": "Spec-This MCP Server"
+      "description": "Spec-This Next.js app with integrated MCP server"
     },
     {
       "name": "my-other-mcp",
@@ -147,7 +149,8 @@ Edit `launchd/projects.json` and add a new project entry:
 - A unique `name` (used in commands)
 - A unique `label` (reverse domain notation, must be globally unique on your system)
 - An absolute `projectPath` pointing to the project directory
-- A built MCP server at `{projectPath}/dist/mcp-server.js`
+- A `port` number for the Next.js server (defaults to 3080 if not specified)
+- A built Next.js app at `{projectPath}/.next`
 
 ### 2. Install the New Service
 
@@ -225,9 +228,9 @@ This deletes logs older than 30 days every Sunday at midnight.
 
 ### Service won't start
 
-1. **Check if MCP server is built**:
+1. **Check if Next.js is built**:
    ```bash
-   ls -l dist/mcp-server.js
+   ls -l .next
    ```
 
 2. **Verify Node.js path**:
@@ -259,7 +262,7 @@ This deletes logs older than 30 days every Sunday at midnight.
 3. **Test manually**:
    ```bash
    cd /path/to/spec-this
-   node dist/mcp-server.js
+   npm run start  # Visit http://localhost:3080
    ```
 
 ### Can't find service
@@ -301,7 +304,7 @@ To add custom environment variables to your service, edit the plist template:
    ```
 3. Reinstall the service
 
-**Note**: For sensitive data like `DATABASE_URL`, use `.env.local` in your project directory instead (the MCP server loads it automatically via dotenv).
+**Note**: For sensitive data like `DATABASE_URL`, use `.env.local` in your project directory instead (Next.js loads it automatically).
 
 ### Multiple Instances of Same Project
 
@@ -367,20 +370,19 @@ rm -rf ~/Library/Logs/mcp-servers
 
 ## Integration with MCP Clients
 
-Once running, your MCP server is accessible via stdio. Configure your MCP client (like Claude Desktop) to connect:
+Once running, your MCP server is accessible via HTTP. Configure your MCP client (like Claude Desktop) to connect via SSE transport:
 
 ```json
 {
   "mcpServers": {
     "spec-this": {
-      "command": "node",
-      "args": ["/path/to/spec-this/dist/mcp-server.js"]
+      "url": "http://localhost:3080/api/sse"
     }
   }
 }
 ```
 
-**Note**: The background service is for keeping it running persistently. MCP clients still need to be configured separately to connect to it.
+**Note**: The background service keeps the Next.js server running persistently, which includes both the web UI (http://localhost:3080) and the MCP server endpoint (/api/sse).
 
 ## Contributing
 

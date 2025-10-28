@@ -38,7 +38,7 @@ spec-this/
 │           ├── upsert-story.ts
 │           ├── read-tasks.ts
 │           └── upsert-task.ts
-├── mcp-server.ts          # MCP server entry point
+├── app/api/[transport]/   # MCP server HTTP endpoint
 ├── drizzle.config.ts      # Drizzle ORM configuration
 ├── next.config.ts         # Next.js configuration
 └── package.json
@@ -95,7 +95,7 @@ Specific file modifications planned as part of a Story:
 
 ## MCP Server
 
-The MCP server (`mcp-server.ts`) exposes 7 tools for managing the spec hierarchy:
+The MCP server is integrated into Next.js via the `/api/[transport]/route.ts` endpoint and exposes 7 tools for managing the spec hierarchy:
 
 ### Available Tools
 1. **read_repos** - Fetch all repositories or get specific repository by ID (read-only, create repos via UI)
@@ -106,27 +106,32 @@ The MCP server (`mcp-server.ts`) exposes 7 tools for managing the spec hierarchy
 6. **read_planned_file_changes** - Fetch planned file changes with optional filters (storyId, status, or specific ID)
 7. **upsert_planned_file_change** - Create/update planned file changes (requires storyId, filePath, changeType)
 
-### MCP Server Commands
-```bash
-# Development (with auto-reload)
-npm run dev:mcp
+### Accessing the MCP Server
 
-# Build
-npm run build:mcp
+The MCP server runs alongside the Next.js app and is accessible at:
+- **HTTP/SSE**: `http://localhost:3080/api/sse`
+- **Streamable HTTP**: `http://localhost:3080/api/messages`
 
-# Start (production)
-npm run start:mcp
+Configure your MCP client (like Claude Desktop) to connect:
+```json
+{
+  "mcpServers": {
+    "spec-this": {
+      "url": "http://localhost:3080/api/sse"
+    }
+  }
+}
 ```
 
 ### Running as Background Service (macOS)
 
-For production use, the MCP server can run as a persistent background service that auto-starts on login and auto-restarts on crashes. See `launchd/README.md` for complete documentation.
+For production use, Next.js (with integrated MCP server) can run as a persistent background service that auto-starts on login and auto-restarts on crashes. See `launchd/README.md` for complete documentation.
 
 **Quick Start:**
 ```bash
 # 1. Configure your project path in launchd/projects.json
 # 2. Build and install
-npm run build:mcp
+npm run build
 npm run service:install
 
 # Common commands
@@ -140,9 +145,11 @@ npm run service:uninstall       # Remove service
 ```
 
 **Managing Multiple Projects:**
-The service system supports running multiple MCP servers simultaneously. Edit `launchd/projects.json` to add additional projects, then run `npm run service:install` to install all enabled services.
+The service system supports running multiple Next.js/MCP projects simultaneously. Edit `launchd/projects.json` to add additional projects, then run `npm run service:install` to install all enabled services.
 
 Logs are stored at: `~/Library/Logs/mcp-servers/{project-name}/`
+
+**Note:** The background service runs the entire Next.js application, providing both the web UI (http://localhost:3080) and MCP server (/api/sse) simultaneously.
 
 ## Development Workflow
 
@@ -155,18 +162,20 @@ Logs are stored at: `~/Library/Logs/mcp-servers/{project-name}/`
 
 ### Running the Application
 
-**Next.js Web App:**
+**Next.js Web App (with integrated MCP server):**
 ```bash
-npm run dev          # Development with Turbopack
+npm run dev          # Development with Turbopack (includes MCP server)
 npm run build        # Production build
-npm run start        # Start production server
+npm run start        # Start production server (http://localhost:3080)
 ```
 
-**MCP Server:**
+**Background Service (macOS only):**
 ```bash
-npm run dev:mcp      # Development (uses tsx for hot reload)
-npm run build:mcp    # Compile to dist/mcp-server.js
-npm run start:mcp    # Run compiled server
+npm run service:install      # Install and start as background service
+npm run service:status       # Check service status
+npm run service:restart      # Restart after code changes
+npm run service:logs         # View logs
+npm run service:uninstall    # Remove background service
 ```
 
 ### Database Management
@@ -229,7 +238,7 @@ DATABASE_URL=postgresql://user:password@host:port/database
 
 ### Code Modifications
 - Run `npm run db:generate` after schema changes
-- Test MCP server with `npm run dev:mcp` before building
+- Test via `npm run dev` - includes both web UI and MCP server
 - Use TypeScript strict mode features
 - Follow existing code organization patterns
 

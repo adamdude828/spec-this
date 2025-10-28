@@ -49,17 +49,9 @@ npm run build        # Production build
 npm run start        # Start production server
 ```
 
-**MCP Server:**
-
-```bash
-npm run dev:mcp      # Development with auto-reload
-npm run build:mcp    # Compile to dist/mcp-server.js
-npm run start:mcp    # Run compiled server
-```
-
 **Background Service (macOS):**
 
-Run the MCP server as a persistent background service that auto-starts on login:
+Run the Next.js server (with integrated MCP) as a persistent background service that auto-starts on login:
 
 ```bash
 npm run service:install      # Install and start background service

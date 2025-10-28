@@ -6,11 +6,14 @@
     <key>Label</key>
     <string>{{LABEL}}</string>
 
-    <!-- Program to run -->
+    <!-- Program to run - Next.js production server -->
     <key>ProgramArguments</key>
     <array>
         <string>{{NODE_PATH}}</string>
-        <string>{{PROJECT_PATH}}/dist/mcp-server.js</string>
+        <string>{{PROJECT_PATH}}/node_modules/.bin/next</string>
+        <string>start</string>
+        <string>-p</string>
+        <string>{{PORT}}</string>
     </array>
 
     <!-- Working directory -->
@@ -24,6 +27,8 @@
         <string>production</string>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PORT</key>
+        <string>{{PORT}}</string>
         <!-- DATABASE_URL should be set in .env.local in project directory -->
     </dict>
 

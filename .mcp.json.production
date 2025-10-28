@@ -1,10 +1,7 @@
 {
   "mcpServers": {
     "spec-this": {
-      "command": "/Users/adamholsinger/spec-this/dist/mcp-server.js",
-      "env": {
-        "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/spec_this"
-      }
+      "url": "http://localhost:3080/api/sse"
     }
   }
 }
