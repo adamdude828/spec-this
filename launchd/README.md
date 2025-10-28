@@ -203,7 +203,13 @@ Each project in `projects.json` has these fields:
 ```
 launchd/
 ├── README.md                          # This file
+├── QUICKSTART.md                      # Quick start guide
 ├── mcp-service.sh                     # Main management script
+├── lib/                               # Modular script components
+│   ├── common.sh                      # Common utilities & logging
+│   ├── config.sh                      # Configuration management
+│   ├── plist.sh                       # Plist generation
+│   └── service.sh                     # Service operations
 ├── com.specthis.mcp.plist.template   # Launchd plist template
 ├── projects.json                      # Your project configuration
 └── projects.json.example              # Example configuration
@@ -226,6 +232,23 @@ This deletes logs older than 30 days every Sunday at midnight.
 
 ## Troubleshooting
 
+### Verbose Mode
+
+For detailed debugging output, use the `-v` or `--verbose` flag:
+
+```bash
+./mcp-service.sh -v install spec-this
+./mcp-service.sh -v status spec-this
+./mcp-service.sh --verbose --log /tmp/service.log install
+```
+
+This will show:
+- Configuration file paths
+- Project validation steps
+- launchctl commands being executed
+- File system operations
+- All intermediate steps
+
 ### Service won't start
 
 1. **Check if Next.js is built**:
@@ -239,9 +262,9 @@ This deletes logs older than 30 days every Sunday at midnight.
    ```
    Update `nodePath` in `projects.json` if different.
 
-3. **Check logs for errors**:
+3. **Check logs for errors (with verbose mode)**:
    ```bash
-   ./mcp-service.sh logs spec-this
+   ./mcp-service.sh -v logs spec-this
    ```
 
 4. **Verify launchd status**:

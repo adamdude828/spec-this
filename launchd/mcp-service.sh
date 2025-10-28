@@ -9,337 +9,52 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 CONFIG_FILE="${SCRIPT_DIR}/projects.json"
 TEMPLATE_FILE="${SCRIPT_DIR}/com.specthis.mcp.plist.template"
-LAUNCHD_DIR="${HOME}/Library/LaunchAgents"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Parse command line options
+VERBOSE=false
+LOG_FILE=""
 
-# Helper functions
-print_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
-}
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        -l|--log)
+            LOG_FILE="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
-print_success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
+# Export variables for child scripts
+export VERBOSE
+export LOG_FILE
 
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
+# Initialize log file if specified
+if [ -n "$LOG_FILE" ]; then
+    echo "=== MCP Service Manager Log - $(date) ===" > "$LOG_FILE"
+fi
 
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
-
-# Check if config file exists
-check_config() {
-    if [ ! -f "$CONFIG_FILE" ]; then
-        print_error "Configuration file not found: $CONFIG_FILE"
-        print_info "Copy projects.json.example to projects.json and configure your projects"
-        exit 1
-    fi
-}
-
-# Get node path
-get_node_path() {
-    local node_path=$(which node)
-    if [ -z "$node_path" ]; then
-        print_error "Node.js not found in PATH"
-        exit 1
-    fi
-    echo "$node_path"
-}
-
-# Expand tilde in paths
-expand_path() {
-    local path="$1"
-    echo "${path/#\~/$HOME}"
-}
-
-# Read projects from config
-read_projects() {
-    check_config
-    cat "$CONFIG_FILE"
-}
-
-# Get project by name
-get_project() {
-    local project_name="$1"
-    read_projects | jq -r ".projects[] | select(.name == \"$project_name\")"
-}
-
-# Get all enabled projects
-get_enabled_projects() {
-    read_projects | jq -r '.projects[] | select(.enabled == true) | .name'
-}
-
-# Generate plist file for a project
-generate_plist() {
-    local project_name="$1"
-    local project=$(get_project "$project_name")
-
-    if [ -z "$project" ]; then
-        print_error "Project not found: $project_name"
-        return 1
-    fi
-
-    local label=$(echo "$project" | jq -r '.label')
-    local project_path=$(expand_path "$(echo "$project" | jq -r '.projectPath')")
-    local port=$(echo "$project" | jq -r '.port // "3080"')
-    local log_dir=$(expand_path "$(read_projects | jq -r '.global.logDirectory')")
-    local node_path=$(read_projects | jq -r '.global.nodePath // empty')
-
-    if [ -z "$node_path" ]; then
-        node_path=$(get_node_path)
-    else
-        node_path=$(expand_path "$node_path")
-    fi
-
-    # Create log directory
-    local project_log_dir="${log_dir}/${project_name}"
-    mkdir -p "$project_log_dir"
-
-    # Generate plist from template
-    local plist_content=$(cat "$TEMPLATE_FILE")
-    plist_content="${plist_content//\{\{LABEL\}\}/$label}"
-    plist_content="${plist_content//\{\{NODE_PATH\}\}/$node_path}"
-    plist_content="${plist_content//\{\{PROJECT_PATH\}\}/$project_path}"
-    plist_content="${plist_content//\{\{PORT\}\}/$port}"
-    plist_content="${plist_content//\{\{LOG_PATH\}\}/$project_log_dir}"
-
-    echo "$plist_content"
-}
-
-# Install a project
-install_project() {
-    local project_name="$1"
-    local project=$(get_project "$project_name")
-
-    if [ -z "$project" ]; then
-        print_error "Project not found: $project_name"
-        return 1
-    fi
-
-    local label=$(echo "$project" | jq -r '.label')
-    local plist_file="${LAUNCHD_DIR}/${label}.plist"
-
-    print_info "Installing $project_name..."
-
-    # Check if Next.js is built
-    local project_path=$(expand_path "$(echo "$project" | jq -r '.projectPath')")
-    if [ ! -d "${project_path}/.next" ]; then
-        print_warning "Next.js not built. Building now..."
-        (cd "$project_path" && npm run build)
-    fi
-
-    # Generate and write plist
-    generate_plist "$project_name" > "$plist_file"
-
-    # Load the service
-    launchctl load "$plist_file" 2>/dev/null || true
-    launchctl enable "gui/$(id -u)/${label}"
-    launchctl kickstart -k "gui/$(id -u)/${label}" 2>/dev/null || true
-
-    print_success "$project_name installed and started"
-    print_info "Plist: $plist_file"
-}
-
-# Uninstall a project
-uninstall_project() {
-    local project_name="$1"
-    local project=$(get_project "$project_name")
-
-    if [ -z "$project" ]; then
-        print_error "Project not found: $project_name"
-        return 1
-    fi
-
-    local label=$(echo "$project" | jq -r '.label')
-    local plist_file="${LAUNCHD_DIR}/${label}.plist"
-
-    print_info "Uninstalling $project_name..."
-
-    # Stop and unload the service
-    launchctl bootout "gui/$(id -u)/${label}" 2>/dev/null || true
-    launchctl disable "gui/$(id -u)/${label}" 2>/dev/null || true
-
-    # Remove plist file
-    if [ -f "$plist_file" ]; then
-        rm "$plist_file"
-        print_success "Removed $plist_file"
-    fi
-
-    print_success "$project_name uninstalled"
-}
-
-# Start a project
-start_project() {
-    local project_name="$1"
-    local project=$(get_project "$project_name")
-
-    if [ -z "$project" ]; then
-        print_error "Project not found: $project_name"
-        return 1
-    fi
-
-    local label=$(echo "$project" | jq -r '.label')
-
-    print_info "Starting $project_name..."
-    launchctl kickstart -k "gui/$(id -u)/${label}"
-    print_success "$project_name started"
-}
-
-# Stop a project
-stop_project() {
-    local project_name="$1"
-    local project=$(get_project "$project_name")
-
-    if [ -z "$project" ]; then
-        print_error "Project not found: $project_name"
-        return 1
-    fi
-
-    local label=$(echo "$project" | jq -r '.label')
-
-    print_info "Stopping $project_name..."
-    launchctl kill SIGTERM "gui/$(id -u)/${label}" 2>/dev/null || true
-    print_success "$project_name stopped"
-}
-
-# Restart a project
-restart_project() {
-    local project_name="$1"
-    stop_project "$project_name"
-    sleep 1
-    start_project "$project_name"
-}
-
-# Show status of a project
-status_project() {
-    local project_name="$1"
-    local project=$(get_project "$project_name")
-
-    if [ -z "$project" ]; then
-        print_error "Project not found: $project_name"
-        return 1
-    fi
-
-    local label=$(echo "$project" | jq -r '.label')
-    local description=$(echo "$project" | jq -r '.description // ""')
-
-    echo ""
-    echo "Project: $project_name"
-    if [ -n "$description" ]; then
-        echo "Description: $description"
-    fi
-    echo "Label: $label"
-    echo ""
-
-    # Check if service is loaded
-    local status=$(launchctl list | grep "$label" || true)
-    if [ -n "$status" ]; then
-        print_success "Service is loaded"
-        echo "$status"
-    else
-        print_warning "Service is not loaded"
-    fi
-}
-
-# Show status of all projects
-status_all() {
-    check_config
-    local projects=$(read_projects | jq -r '.projects[].name')
-
-    echo ""
-    echo "=== MCP Services Status ==="
-    echo ""
-
-    for project in $projects; do
-        local project_data=$(get_project "$project")
-        local label=$(echo "$project_data" | jq -r '.label')
-        local enabled=$(echo "$project_data" | jq -r '.enabled')
-
-        printf "%-20s" "$project"
-
-        if [ "$enabled" = "true" ]; then
-            local status=$(launchctl list | grep "$label" || true)
-            if [ -n "$status" ]; then
-                print_success "Running"
-            else
-                print_warning "Not running"
-            fi
-        else
-            echo -e "${YELLOW}Disabled${NC}"
-        fi
-    done
-    echo ""
-}
-
-# Show logs for a project
-logs_project() {
-    local project_name="$1"
-    local follow="${2:-false}"
-
-    local log_dir=$(expand_path "$(read_projects | jq -r '.global.logDirectory')")
-    local project_log_dir="${log_dir}/${project_name}"
-
-    if [ ! -d "$project_log_dir" ]; then
-        print_error "Log directory not found: $project_log_dir"
-        return 1
-    fi
-
-    print_info "Logs for $project_name:"
-    print_info "Location: $project_log_dir"
-    echo ""
-
-    if [ "$follow" = "true" ]; then
-        tail -f "${project_log_dir}/stdout.log" "${project_log_dir}/stderr.log"
-    else
-        echo "=== STDOUT ==="
-        tail -n 50 "${project_log_dir}/stdout.log" 2>/dev/null || echo "No stdout logs"
-        echo ""
-        echo "=== STDERR ==="
-        tail -n 50 "${project_log_dir}/stderr.log" 2>/dev/null || echo "No stderr logs"
-    fi
-}
-
-# List all projects
-list_projects() {
-    check_config
-    echo ""
-    echo "=== Configured Projects ==="
-    echo ""
-    read_projects | jq -r '.projects[] | "\(.name) - \(.description // "No description") [\(if .enabled then "enabled" else "disabled" end)]"'
-    echo ""
-}
-
-# Install all enabled projects
-install_all() {
-    local projects=$(get_enabled_projects)
-    for project in $projects; do
-        install_project "$project"
-    done
-}
-
-# Uninstall all projects
-uninstall_all() {
-    check_config
-    local projects=$(read_projects | jq -r '.projects[].name')
-    for project in $projects; do
-        uninstall_project "$project"
-    done
-}
+# Source modular scripts
+source "$SCRIPT_DIR/lib/common.sh"
+source "$SCRIPT_DIR/lib/config.sh"
+source "$SCRIPT_DIR/lib/plist.sh"
+source "$SCRIPT_DIR/lib/service.sh"
 
 # Show usage
 usage() {
     cat << EOF
 MCP Service Manager for macOS
 
-Usage: $0 <command> [project-name] [options]
+Usage: $0 [options] <command> [project-name] [args]
+
+Options:
+    -v, --verbose          Enable verbose output
+    -l, --log <file>       Write log to file
 
 Commands:
     install [project]      Install service(s) - all enabled if no project specified
@@ -354,7 +69,7 @@ Commands:
 
 Examples:
     $0 install                 # Install all enabled projects
-    $0 install spec-this       # Install spec-this project
+    $0 -v install spec-this    # Install spec-this with verbose output
     $0 status                  # Show status of all projects
     $0 status spec-this        # Show status of spec-this
     $0 logs spec-this -f       # Follow logs for spec-this
@@ -372,22 +87,40 @@ main() {
     local project="${2:-}"
     local option="${3:-}"
 
+    print_debug "Command: $command"
+    print_debug "Project: $project"
+    print_debug "Option: $option"
+    print_debug "Verbose: $VERBOSE"
+    print_debug "Log file: ${LOG_FILE:-none}"
+
+    # Check dependencies first
+    if ! command_exists jq; then
+        print_error "jq is required but not installed"
+        print_info "Install with: brew install jq"
+        exit 1
+    fi
+
+    # Check if running on macOS (except for list/help commands)
+    if [ "$command" != "list" ] && [ "$command" != "help" ] && [ "$command" != "--help" ] && [ "$command" != "-h" ]; then
+        check_macos
+    fi
+
     # Ensure LaunchAgents directory exists
-    mkdir -p "$LAUNCHD_DIR"
+    ensure_launchd_dir
 
     case "$command" in
         install)
             if [ -n "$project" ]; then
-                install_project "$project"
+                install_project "$CONFIG_FILE" "$TEMPLATE_FILE" "$project"
             else
-                install_all
+                install_all "$CONFIG_FILE" "$TEMPLATE_FILE"
             fi
             ;;
         uninstall)
             if [ -n "$project" ]; then
-                uninstall_project "$project"
+                uninstall_project "$CONFIG_FILE" "$project"
             else
-                uninstall_all
+                uninstall_all "$CONFIG_FILE"
             fi
             ;;
         start)
@@ -396,7 +129,7 @@ main() {
                 usage
                 exit 1
             fi
-            start_project "$project"
+            start_project "$CONFIG_FILE" "$project"
             ;;
         stop)
             if [ -z "$project" ]; then
@@ -404,7 +137,7 @@ main() {
                 usage
                 exit 1
             fi
-            stop_project "$project"
+            stop_project "$CONFIG_FILE" "$project"
             ;;
         restart)
             if [ -z "$project" ]; then
@@ -412,13 +145,13 @@ main() {
                 usage
                 exit 1
             fi
-            restart_project "$project"
+            restart_project "$CONFIG_FILE" "$project"
             ;;
         status)
             if [ -n "$project" ]; then
-                status_project "$project"
+                status_project "$CONFIG_FILE" "$project"
             else
-                status_all
+                status_all "$CONFIG_FILE"
             fi
             ;;
         logs)
@@ -428,13 +161,13 @@ main() {
                 exit 1
             fi
             if [ "$option" = "-f" ]; then
-                logs_project "$project" true
+                logs_project "$CONFIG_FILE" "$project" true
             else
-                logs_project "$project" false
+                logs_project "$CONFIG_FILE" "$project" false
             fi
             ;;
         list)
-            list_projects
+            list_projects "$CONFIG_FILE"
             ;;
         help|--help|-h)
             usage
@@ -447,13 +180,6 @@ main() {
             ;;
     esac
 }
-
-# Check dependencies
-if ! command -v jq &> /dev/null; then
-    print_error "jq is required but not installed"
-    print_info "Install with: brew install jq"
-    exit 1
-fi
 
 # Run main
 main "$@"
