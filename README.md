@@ -49,13 +49,18 @@ npm run build        # Production build
 npm run start        # Start production server
 ```
 
-**MCP Server:**
+**Background Service (macOS):**
+
+Run the Next.js server (with integrated MCP) as a persistent background service that auto-starts on login:
 
 ```bash
-npm run dev:mcp      # Development with auto-reload
-npm run build:mcp    # Compile to dist/mcp-server.js
-npm run start:mcp    # Run compiled server
+npm run service:install      # Install and start background service
+npm run service:status       # Check service status
+npm run service:logs         # View logs
+npm run service:restart      # Restart after code changes
 ```
+
+See [docs/background-service.md](./docs/background-service.md) for complete setup and usage.
 
 ## Database Management
 
@@ -111,7 +116,8 @@ The MCP server exposes tools for managing specifications:
 
 ## Documentation
 
-For detailed architecture, best practices, and development guidelines, see [CLAUDE.md](./CLAUDE.md).
+- **[CLAUDE.md](./CLAUDE.md)** - Detailed architecture, best practices, and development guidelines
+- **[docs/background-service.md](./docs/background-service.md)** - Running MCP server as a background service (macOS)
 
 ## Tech Stack
 
