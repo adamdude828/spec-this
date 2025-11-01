@@ -5,6 +5,7 @@ import { relations } from 'drizzle-orm';
 export const epicStatusEnum = pgEnum('epic_status', ['draft', 'active', 'completed', 'archived']);
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high', 'critical']);
 export const storyStatusEnum = pgEnum('story_status', ['draft', 'ready', 'in_progress', 'review', 'completed']);
+export const quickTaskStatusEnum = pgEnum('quick_task_status', ['planned', 'in_progress', 'completed', 'cancelled']);
 export const fileChangeTypeEnum = pgEnum('file_change_type', ['create', 'modify', 'delete']);
 export const fileChangeStatusEnum = pgEnum('file_change_status', ['planned', 'in_progress', 'completed', 'failed']);
 export const providerCodeEnum = pgEnum('provider_code', ['github', 'azure_devops', 'gitlab', 'bitbucket']);
@@ -59,12 +60,30 @@ export const stories = pgTable('stories', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Quick Tasks Table
+// Lightweight tasks that belong directly to a repository
+// Designed for AI agents to quickly plan and execute small changes
+export const quickTasks = pgTable('quick_tasks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  repoId: uuid('repo_id').notNull().references(() => repositories.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  status: quickTaskStatusEnum('status').notNull().default('planned'),
+  priority: priorityEnum('priority').notNull().default('medium'),
+  orderIndex: integer('order_index').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at'),
+});
+
 // Planned File Changes Table
-// Tracks specific file modifications planned as part of a Story
+// Tracks specific file modifications planned as part of a Story or Quick Task
 // Links to files in the codebase (can reference Neo4j file graph for dependencies)
+// Note: Either storyId OR quickTaskId must be set (mutually exclusive)
 export const plannedFileChanges = pgTable('planned_file_changes', {
   id: uuid('id').primaryKey().defaultRandom(),
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
+  storyId: uuid('story_id').references(() => stories.id, { onDelete: 'cascade' }),
+  quickTaskId: uuid('quick_task_id').references(() => quickTasks.id, { onDelete: 'cascade' }),
 
   // File information
   filePath: text('file_path').notNull(), // Relative path from repo root
@@ -99,6 +118,7 @@ export const repositoriesRelations = relations(repositories, ({ one, many }) => 
     references: [providers.id],
   }),
   epics: many(epics),
+  quickTasks: many(quickTasks),
 }));
 
 export const epicsRelations = relations(epics, ({ one, many }) => ({
@@ -117,9 +137,21 @@ export const storiesRelations = relations(stories, ({ one, many }) => ({
   plannedFileChanges: many(plannedFileChanges),
 }));
 
+export const quickTasksRelations = relations(quickTasks, ({ one, many }) => ({
+  repository: one(repositories, {
+    fields: [quickTasks.repoId],
+    references: [repositories.id],
+  }),
+  plannedFileChanges: many(plannedFileChanges),
+}));
+
 export const plannedFileChangesRelations = relations(plannedFileChanges, ({ one }) => ({
   story: one(stories, {
     fields: [plannedFileChanges.storyId],
     references: [stories.id],
+  }),
+  quickTask: one(quickTasks, {
+    fields: [plannedFileChanges.quickTaskId],
+    references: [quickTasks.id],
   }),
 }));
