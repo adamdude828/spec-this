@@ -5,7 +5,8 @@ import type { ToolDefinition } from "../types/tool.ts";
 
 const upsertPlannedFileChangeSchema = z.object({
   id: z.string().uuid().optional().describe("Planned file change ID for update, omit for insert"),
-  storyId: z.string().uuid().describe("Story ID this planned file change belongs to"),
+  storyId: z.string().uuid().optional().describe("Story ID this planned file change belongs to (mutually exclusive with quickTaskId)"),
+  quickTaskId: z.string().uuid().optional().describe("Quick task ID this planned file change belongs to (mutually exclusive with storyId)"),
   filePath: z.string().min(1).describe("Relative path from repo root to the file"),
   changeType: z.enum(['create', 'modify', 'delete']).describe("Type of change being made"),
   description: z.string().optional().describe("What changes are being made and why"),
@@ -13,13 +14,25 @@ const upsertPlannedFileChangeSchema = z.object({
   status: z.enum(['planned', 'in_progress', 'completed', 'failed']).optional().describe("Status of the file change"),
   beforeSnapshot: z.string().optional().describe("File content before change"),
   afterSnapshot: z.string().optional().describe("Expected/actual content after change"),
-  orderIndex: z.number().int().optional().describe("Order within story"),
+  orderIndex: z.number().int().optional().describe("Order within story or quick task"),
   completedAt: z.string().datetime().optional().describe("Completion timestamp (ISO 8601)"),
-});
+}).refine(
+  (data) => {
+    // For new inserts (no id), require either storyId or quickTaskId but not both
+    if (!data.id) {
+      return (data.storyId && !data.quickTaskId) || (!data.storyId && data.quickTaskId);
+    }
+    // For updates, allow either or neither (can update other fields)
+    return true;
+  },
+  {
+    message: "Must provide either storyId or quickTaskId (but not both) when creating a new planned file change",
+  }
+);
 
 export const upsertPlannedFileChangeTool: ToolDefinition = {
   name: "upsert_planned_file_change",
-  description: "Create a new planned file change or update an existing one. Provide an ID to update, omit ID to create new.",
+  description: "Create a new planned file change or update an existing one. Provide an ID to update, omit ID to create new. Must specify either storyId or quickTaskId (but not both) for new changes.",
   schema: upsertPlannedFileChangeSchema,
   handler: async (params) => {
     try {
@@ -30,6 +43,7 @@ export const upsertPlannedFileChangeTool: ToolDefinition = {
         };
 
         if (params.storyId !== undefined) updateData.storyId = params.storyId;
+        if (params.quickTaskId !== undefined) updateData.quickTaskId = params.quickTaskId;
         if (params.filePath !== undefined) updateData.filePath = params.filePath;
         if (params.changeType !== undefined) updateData.changeType = params.changeType;
         if (params.description !== undefined) updateData.description = params.description;
@@ -64,10 +78,13 @@ export const upsertPlannedFileChangeTool: ToolDefinition = {
       } else {
         // Insert new planned file change
         const insertData: typeof plannedFileChanges.$inferInsert = {
-          storyId: params.storyId,
           filePath: params.filePath,
           changeType: params.changeType,
         };
+
+        // Set either storyId or quickTaskId (validation ensures one is provided)
+        if (params.storyId !== undefined) insertData.storyId = params.storyId;
+        if (params.quickTaskId !== undefined) insertData.quickTaskId = params.quickTaskId;
 
         if (params.description !== undefined) insertData.description = params.description;
         if (params.expectedChanges !== undefined) insertData.expectedChanges = params.expectedChanges;
