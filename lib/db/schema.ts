@@ -1,5 +1,5 @@
-import { pgTable, text, timestamp, integer, uuid, pgEnum } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { pgTable, text, timestamp, integer, uuid, pgEnum, customType } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
 
 // Enums
 export const epicStatusEnum = pgEnum('epic_status', ['draft', 'active', 'completed', 'archived']);
@@ -123,3 +123,30 @@ export const plannedFileChangesRelations = relations(plannedFileChanges, ({ one 
     references: [stories.id],
   }),
 }));
+
+// Custom vector type for pgvector
+export const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return 'vector(1536)';
+  },
+  toDriver(value: number[]): string {
+    return JSON.stringify(value);
+  },
+  fromDriver(value: string): number[] {
+    return JSON.parse(value);
+  },
+});
+
+// URLs Table - Knowledge base for AI agents
+// Stores URLs with their content, embeddings, and tags for vector search
+export const urls = pgTable('urls', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  url: text('url').notNull().unique(),
+  title: text('title'),
+  content: text('content'), // Extracted text content from URL
+  summary: text('summary'), // Optional summary of the content
+  embedding: vector('embedding'), // OpenAI embedding vector (1536 dimensions)
+  tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`), // Array of tags for filtering
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});

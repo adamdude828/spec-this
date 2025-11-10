@@ -11,7 +11,8 @@ Stories are the atomic unit of work, with each Story containing one or more Plan
 ### Tech Stack
 - **Framework**: Next.js 15.5.4 (with Turbopack)
 - **Language**: TypeScript 5
-- **Database**: PostgreSQL via Drizzle ORM
+- **Database**: PostgreSQL with pgvector extension via Drizzle ORM
+- **AI/ML**: OpenAI API (text-embedding-3-small) for vector embeddings
 - **MCP SDK**: @modelcontextprotocol/sdk v1.19.1
 - **Styling**: Tailwind CSS v4
 - **Runtime**: Node.js
@@ -27,17 +28,22 @@ spec-this/
 │   ├── db/
 │   │   ├── schema.ts      # Drizzle database schema
 │   │   └── index.ts       # Database connection
-│   └── mcp/
-│       ├── types/
-│       │   └── tool.ts    # MCP tool type definitions
-│       └── tools/         # MCP tool implementations
-│           ├── index.ts   # Tool registry
-│           ├── read-epics.ts
-│           ├── upsert-epic.ts
-│           ├── read-stories.ts
-│           ├── upsert-story.ts
-│           ├── read-tasks.ts
-│           └── upsert-task.ts
+│   ├── mcp/
+│   │   ├── types/
+│   │   │   └── tool.ts    # MCP tool type definitions
+│   │   └── tools/         # MCP tool implementations
+│   │       ├── index.ts   # Tool registry
+│   │       ├── read-epics.ts
+│   │       ├── upsert-epic.ts
+│   │       ├── read-stories.ts
+│   │       ├── upsert-story.ts
+│   │       ├── read-urls.ts
+│   │       ├── upsert-url.ts
+│   │       ├── search-urls.ts
+│   │       └── delete-url.ts
+│   └── utils/
+│       ├── url-fetcher.ts # URL content fetching and parsing
+│       └── embeddings.ts  # OpenAI embeddings generation
 ├── mcp-server.ts          # MCP server entry point
 ├── drizzle.config.ts      # Drizzle ORM configuration
 ├── next.config.ts         # Next.js configuration
@@ -93,18 +99,41 @@ Specific file modifications planned as part of a Story:
 
 **Note:** The filePath can be used to query Neo4j for file dependencies and impact analysis.
 
+### URLs (Knowledge Base)
+URL-based knowledge base for AI agents (independent of repositories):
+- `id` (UUID, primary key)
+- `url` (text, required, unique) - The URL to the resource
+- `title` (text) - Extracted or provided title
+- `content` (text) - Extracted text content from the URL
+- `summary` (text) - Optional summary of the content
+- `embedding` (vector(1536)) - OpenAI embedding vector for similarity search
+- `tags` (text array) - Array of tags for categorization and filtering
+- Timestamps: `createdAt`, `updatedAt`
+
+**Vector Search:** Uses PostgreSQL pgvector extension for semantic similarity search via OpenAI embeddings (text-embedding-3-small model).
+
 ## MCP Server
 
-The MCP server (`mcp-server.ts`) exposes 7 tools for managing the spec hierarchy:
+The MCP server (`mcp-server.ts`) exposes tools for managing the spec hierarchy and URL knowledge base:
 
 ### Available Tools
+
+#### Spec Management Tools
 1. **read_repos** - Fetch all repositories or get specific repository by ID (read-only, create repos via UI)
 2. **read_epics** - Fetch all epics, filter by status, or get specific epic by ID
 3. **upsert_epic** - Create new epic or update existing (requires repoId, provide ID to update)
 4. **read_stories** - Fetch stories with optional filters (epicId, status, or specific ID)
 5. **upsert_story** - Create/update stories
-6. **read_planned_file_changes** - Fetch planned file changes with optional filters (storyId, status, or specific ID)
-7. **upsert_planned_file_change** - Create/update planned file changes (requires storyId, filePath, changeType)
+6. **delete_story** - Delete a story by ID
+7. **read_planned_file_changes** - Fetch planned file changes with optional filters (storyId, status, or specific ID)
+8. **upsert_planned_file_change** - Create/update planned file changes (requires storyId, filePath, changeType)
+9. **delete_planned_file_change** - Delete a planned file change by ID
+
+#### URL Knowledge Base Tools
+10. **read_urls** - List all URLs or get specific URL by ID
+11. **upsert_url** - Add/update URL with automatic content fetching and embedding generation (requires OPENAI_API_KEY)
+12. **search_urls** - Search URLs using vector similarity and/or tag filtering (requires OPENAI_API_KEY for similarity search)
+13. **delete_url** - Delete a URL by ID
 
 ### MCP Server Commands
 ```bash
@@ -175,6 +204,7 @@ npm run db:studio    # Open Drizzle Studio UI
 Required in `.env.local`:
 ```
 DATABASE_URL=postgresql://user:password@host:port/database
+OPENAI_API_KEY=sk-...  # Required for URL knowledge base embeddings and similarity search
 ```
 
 ## Best Practices for Claude
@@ -187,6 +217,15 @@ DATABASE_URL=postgresql://user:password@host:port/database
 5. Use descriptive titles and acceptance criteria
 6. For Planned File Changes, always specify filePath relative to repo root
 7. Use the Neo4j file graph (when available) to analyze dependencies before planning changes
+
+### When Working with URL Knowledge Base
+1. Use tags liberally to organize URLs by topic, technology, or project
+2. When adding URLs, let the system automatically fetch and process content
+3. Use `search_urls` with semantic queries for finding relevant information (e.g., "authentication patterns", "react hooks best practices")
+4. Combine tag filtering with semantic search for more precise results
+5. URLs are independent of repositories - useful for documentation, tutorials, API docs, etc.
+6. The knowledge base persists across sessions - build it up over time
+7. Use meaningful, descriptive tags (e.g., "react", "typescript", "authentication", "tutorial")
 
 ### Database Operations
 - Use the MCP tools rather than raw SQL when possible
