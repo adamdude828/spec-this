@@ -4,8 +4,10 @@ import { readEpicsTool } from "./read-epics.ts";
 import { upsertEpicTool } from "./upsert-epic.ts";
 import { readStoriesTool } from "./read-stories.ts";
 import { upsertStoryTool } from "./upsert-story.ts";
-import { readTasksTool } from "./read-tasks.ts";
-import { upsertTaskTool } from "./upsert-task.ts";
+import { deleteStoryTool } from "./delete-story.ts";
+import { readPlannedFileChangesTool } from "./read-planned-file-changes.ts";
+import { upsertPlannedFileChangeTool } from "./upsert-planned-file-change.ts";
+import { deletePlannedFileChangeTool } from "./delete-planned-file-change.ts";
 import { echoTool } from "./echo.ts";
 
 export const allTools: ToolDefinition[] = [
@@ -15,8 +17,10 @@ export const allTools: ToolDefinition[] = [
   upsertEpicTool,
   readStoriesTool,
   upsertStoryTool,
-  readTasksTool,
-  upsertTaskTool,
+  deleteStoryTool,
+  readPlannedFileChangesTool,
+  upsertPlannedFileChangeTool,
+  deletePlannedFileChangeTool,
 ];
 
 export * from "./echo.ts";
@@ -25,5 +29,7 @@ export * from "./read-epics.ts";
 export * from "./upsert-epic.ts";
 export * from "./read-stories.ts";
 export * from "./upsert-story.ts";
-export * from "./read-tasks.ts";
-export * from "./upsert-task.ts";
+export * from "./delete-story.ts";
+export * from "./read-planned-file-changes.ts";
+export * from "./upsert-planned-file-change.ts";
+export * from "./delete-planned-file-change.ts";

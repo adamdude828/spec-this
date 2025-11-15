@@ -147,7 +147,19 @@ export default function EpicDetailPage({
       {/* Epic details */}
       <div className="bg-white rounded-lg shadow p-6 mb-6 border border-gray-200">
         <div className="flex items-start justify-between mb-4">
-          <h1 className="text-3xl font-bold text-gray-900 flex-1">{epic.title}</h1>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">{epic.title}</h1>
+            <Link
+              href={`/epics/${epic.id}/graph`}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-blue-200"
+              title="View file dependencies and planned changes"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              View File Graph
+            </Link>
+          </div>
           <div className="flex gap-2 ml-4 items-center">
             <button
               onClick={() => setIsEditEpicModalOpen(true)}

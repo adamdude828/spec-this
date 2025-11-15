@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Breadcrumb from '@/app/components/Breadcrumb';
-import TaskCard from '@/app/components/TaskCard';
 import EditStoryModal from '@/app/components/EditStoryModal';
+import PlannedFileChangeCard from '@/app/components/PlannedFileChangeCard';
 
 interface Story {
   id: string;
@@ -18,21 +18,23 @@ interface Story {
   updatedAt: string;
 }
 
-interface Task {
+interface Epic {
+  id: string;
+  title: string;
+}
+
+interface PlannedFileChange {
   id: string;
   storyId: string;
-  title: string;
+  filePath: string;
+  changeType: 'create' | 'modify' | 'delete';
   description: string | null;
-  status: string;
+  expectedChanges: string | null;
+  status: 'planned' | 'in_progress' | 'completed' | 'failed';
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
-}
-
-interface Epic {
-  id: string;
-  title: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -57,8 +59,8 @@ export default function StoryDetailPage({
 }) {
   const [id, setId] = useState<string>('');
   const [story, setStory] = useState<Story | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [epic, setEpic] = useState<Epic | null>(null);
+  const [plannedFileChanges, setPlannedFileChanges] = useState<PlannedFileChange[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -73,21 +75,21 @@ export default function StoryDetailPage({
       if (!storyRes.ok) throw new Error('Failed to fetch story');
       const storyData = await storyRes.json();
 
-      const [tasksRes, epicRes] = await Promise.all([
-        fetch(`/api/tasks?storyId=${id}`, { cache: 'no-store' }),
+      const [epicRes, changesRes] = await Promise.all([
         fetch(`/api/epics/${storyData.epicId}`, { cache: 'no-store' }),
+        fetch(`/api/planned-file-changes?storyId=${id}`, { cache: 'no-store' }),
       ]);
 
-      if (!tasksRes.ok || !epicRes.ok) {
+      if (!epicRes.ok || !changesRes.ok) {
         throw new Error('Failed to fetch data');
       }
 
-      const tasksData = await tasksRes.json();
       const epicData = await epicRes.json();
+      const changesData = await changesRes.json();
 
       setStory(storyData);
-      setTasks(tasksData);
       setEpic(epicData);
+      setPlannedFileChanges(changesData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -98,10 +100,6 @@ export default function StoryDetailPage({
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  const handleTaskUpdate = () => {
-    fetchData();
-  };
 
   const [isEditStoryModalOpen, setIsEditStoryModalOpen] = useState(false);
 
@@ -179,11 +177,10 @@ export default function StoryDetailPage({
 
       </div>
 
-      {/* Tasks list */}
+      {/* Planned File Changes section */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Tasks</h2>
-
-        {tasks.length === 0 ? (
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Planned File Changes</h2>
+        {plannedFileChanges.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
@@ -195,26 +192,27 @@ export default function StoryDetailPage({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No tasks</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No planned file changes</h3>
             <p className="mt-1 text-sm text-gray-500">
-              This story doesn&apos;t have any tasks yet
+              This story doesn&apos;t have any planned file changes yet
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {tasks
+          <div className="space-y-4">
+            {plannedFileChanges
               .sort((a, b) => a.orderIndex - b.orderIndex)
-              .map((task) => (
-                <TaskCard
-                  key={task.id}
-                  id={task.id}
-                  title={task.title}
-                  description={task.description}
-                  status={task.status}
-                  onUpdate={handleTaskUpdate}
+              .map((change) => (
+                <PlannedFileChangeCard
+                  key={change.id}
+                  id={change.id}
+                  filePath={change.filePath}
+                  changeType={change.changeType}
+                  description={change.description}
+                  expectedChanges={change.expectedChanges}
+                  status={change.status}
                 />
               ))}
           </div>
