@@ -16,7 +16,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "neo4j:init": "tsx lib/db/neo4j-init.ts"
+    "neo4j:init": "tsx lib/db/neo4j-init.ts",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop spec-this",
+    "pm2:restart": "pm2 restart spec-this",
+    "pm2:status": "pm2 status",
+    "pm2:logs": "pm2 logs spec-this"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
@@ -29,6 +34,7 @@
     "mcp-handler": "^1.0.2",
     "neo4j-driver": "^6.0.0",
     "next": "15.5.4",
+    "pm2": "^6.0.13",
     "postgres": "^3.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
