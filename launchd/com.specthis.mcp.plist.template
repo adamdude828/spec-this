@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Service label (must be unique) -->
+    <key>Label</key>
+    <string>{{LABEL}}</string>
+
+    <!-- Program to run - Next.js production server -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{NODE_PATH}}</string>
+        <string>{{PROJECT_PATH}}/node_modules/.bin/next</string>
+        <string>start</string>
+        <string>-p</string>
+        <string>{{PORT}}</string>
+    </array>
+
+    <!-- Working directory -->
+    <key>WorkingDirectory</key>
+    <string>{{PROJECT_PATH}}</string>
+
+    <!-- Environment variables -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>NODE_ENV</key>
+        <string>production</string>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PORT</key>
+        <string>{{PORT}}</string>
+        <!-- DATABASE_URL should be set in .env.local in project directory -->
+    </dict>
+
+    <!-- Run at load (startup) -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Keep alive - restart if crashes -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <!-- Restart after 10 seconds if crashes -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <!-- Standard output log -->
+    <key>StandardOutPath</key>
+    <string>{{LOG_PATH}}/stdout.log</string>
+
+    <!-- Standard error log -->
+    <key>StandardErrorPath</key>
+    <string>{{LOG_PATH}}/stderr.log</string>
+
+    <!-- Process type -->
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <!-- Nice value (lower priority) -->
+    <key>Nice</key>
+    <integer>1</integer>
+</dict>
+</plist>

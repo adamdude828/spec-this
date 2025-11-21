@@ -16,7 +16,16 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "neo4j:init": "tsx lib/db/neo4j-init.ts"
+    "neo4j:init": "tsx lib/db/neo4j-init.ts",
+    "service:install": "launchd/mcp-service.sh install",
+    "service:uninstall": "launchd/mcp-service.sh uninstall",
+    "service:start": "launchd/mcp-service.sh start spec-this",
+    "service:stop": "launchd/mcp-service.sh stop spec-this",
+    "service:restart": "launchd/mcp-service.sh restart spec-this",
+    "service:status": "launchd/mcp-service.sh status spec-this",
+    "service:logs": "launchd/mcp-service.sh logs spec-this",
+    "service:logs:follow": "launchd/mcp-service.sh logs spec-this -f",
+    "service:diagnose": "launchd/diagnose.sh"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
