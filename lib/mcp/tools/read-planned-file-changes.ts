@@ -6,12 +6,13 @@ import type { ToolDefinition } from "../types/tool.ts";
 const readPlannedFileChangesSchema = z.object({
   id: z.string().uuid().optional().describe("Optional planned file change ID to fetch a specific change"),
   storyId: z.string().uuid().optional().describe("Optional story ID to filter planned file changes by story"),
+  quickTaskId: z.string().uuid().optional().describe("Optional quick task ID to filter planned file changes by quick task"),
   status: z.enum(['planned', 'in_progress', 'completed', 'failed']).optional().describe("Optional status filter"),
 });
 
 export const readPlannedFileChangesTool: ToolDefinition = {
   name: "read_planned_file_changes",
-  description: "Read planned file changes from the database. Can fetch all planned file changes, filter by story ID, status, or get a specific change by ID.",
+  description: "Read planned file changes from the database. Can fetch all planned file changes, filter by story ID, quick task ID, status, or get a specific change by ID.",
   schema: readPlannedFileChangesSchema,
   handler: async (params) => {
     try {
@@ -39,6 +40,7 @@ export const readPlannedFileChangesTool: ToolDefinition = {
       // Build conditions
       const conditions = [];
       if (params.storyId) conditions.push(eq(plannedFileChanges.storyId, params.storyId));
+      if (params.quickTaskId) conditions.push(eq(plannedFileChanges.quickTaskId, params.quickTaskId));
       if (params.status) conditions.push(eq(plannedFileChanges.status, params.status));
 
       let query;

@@ -2,9 +2,11 @@
 
 ## Project Overview
 
-**Spec-This** is an AI-first specification-driven development tool that combines a Next.js web application with an MCP (Model Context Protocol) server. It helps manage software development through a hierarchical structure of Repositories → Epics → Stories → Planned File Changes.
+**Spec-This** is an AI-first specification-driven development tool that combines a Next.js web application with an MCP (Model Context Protocol) server. It helps manage software development through a hierarchical structure:
+- **Formal workflow**: Repositories → Epics → Stories → Planned File Changes
+- **Quick workflow**: Repositories → Quick Tasks → Planned File Changes
 
-Stories are the atomic unit of work, with each Story containing one or more Planned File Changes that reference actual files in the codebase.
+Stories are the atomic unit of work for formal planning, with each Story containing one or more Planned File Changes. Quick Tasks provide a lightweight alternative for AI agents to plan and execute small changes without the overhead of epic management.
 
 ## Architecture
 
@@ -66,7 +68,7 @@ Feature groups belonging to repositories:
 - Timestamps: `createdAt`, `updatedAt`
 
 ### Stories
-Feature descriptions belonging to epics (atomic unit of work):
+Feature descriptions belonging to epics (atomic unit of work for formal planning):
 - `id` (UUID, primary key)
 - `epicId` (UUID, foreign key → epics)
 - `title` (text, required)
@@ -77,10 +79,22 @@ Feature descriptions belonging to epics (atomic unit of work):
 - `orderIndex` (integer)
 - Timestamps: `createdAt`, `updatedAt`
 
-### Planned File Changes
-Specific file modifications planned as part of a Story:
+### Quick Tasks
+Lightweight tasks for small changes (ideal for AI agent planning):
 - `id` (UUID, primary key)
-- `storyId` (UUID, foreign key → stories)
+- `repoId` (UUID, foreign key → repositories, required)
+- `title` (text, required)
+- `description` (text)
+- `status` (enum: planned, in_progress, completed, cancelled)
+- `priority` (enum: low, medium, high, critical)
+- `orderIndex` (integer)
+- Timestamps: `createdAt`, `updatedAt`, `completedAt`
+
+### Planned File Changes
+Specific file modifications planned as part of a Story or Quick Task:
+- `id` (UUID, primary key)
+- `storyId` (UUID, foreign key → stories, nullable)
+- `quickTaskId` (UUID, foreign key → quick_tasks, nullable)
 - `filePath` (text, required) - Relative path from repo root
 - `changeType` (enum: create, modify, delete)
 - `description` (text) - What changes are being made and why
@@ -91,11 +105,11 @@ Specific file modifications planned as part of a Story:
 - `orderIndex` (integer)
 - Timestamps: `createdAt`, `updatedAt`, `completedAt`
 
-**Note:** The filePath can be used to query Neo4j for file dependencies and impact analysis.
+**Note:** Either `storyId` OR `quickTaskId` must be set (mutually exclusive). The filePath can be used to query Neo4j for file dependencies and impact analysis.
 
 ## MCP Server
 
-The MCP server (`mcp-server.ts`) exposes 7 tools for managing the spec hierarchy:
+The MCP server (`mcp-server.ts`) exposes 10 tools for managing the spec hierarchy:
 
 ### Available Tools
 1. **read_repos** - Fetch all repositories or get specific repository by ID (read-only, create repos via UI)
@@ -103,8 +117,13 @@ The MCP server (`mcp-server.ts`) exposes 7 tools for managing the spec hierarchy
 3. **upsert_epic** - Create new epic or update existing (requires repoId, provide ID to update)
 4. **read_stories** - Fetch stories with optional filters (epicId, status, or specific ID)
 5. **upsert_story** - Create/update stories
-6. **read_planned_file_changes** - Fetch planned file changes with optional filters (storyId, status, or specific ID)
-7. **upsert_planned_file_change** - Create/update planned file changes (requires storyId, filePath, changeType)
+6. **delete_story** - Delete a story by ID (cascades to planned file changes)
+7. **read_quick_tasks** - Fetch quick tasks with optional filters (repoId, status, or specific ID)
+8. **upsert_quick_task** - Create/update quick tasks (requires repoId, title)
+9. **delete_quick_task** - Delete a quick task by ID (cascades to planned file changes)
+10. **read_planned_file_changes** - Fetch planned file changes with optional filters (storyId, quickTaskId, status, or specific ID)
+11. **upsert_planned_file_change** - Create/update planned file changes (requires either storyId or quickTaskId, filePath, changeType)
+12. **delete_planned_file_change** - Delete a planned file change by ID
 
 ### MCP Server Commands
 ```bash
@@ -154,16 +173,17 @@ npm run db:studio    # Open Drizzle Studio UI
 ## Key Design Patterns
 
 ### Cascade Deletion
-- Deleting a Repository cascades to all child Epics (and their Stories/Planned File Changes)
+- Deleting a Repository cascades to all child Epics and Quick Tasks (and their Stories/Planned File Changes)
 - Deleting an Epic cascades to all child Stories (and their Planned File Changes)
 - Deleting a Story cascades to all child Planned File Changes
+- Deleting a Quick Task cascades to all child Planned File Changes
 
 ### Ordering
-- Stories and Planned File Changes use `orderIndex` for custom ordering within their parent
+- Stories, Quick Tasks, and Planned File Changes use `orderIndex` for custom ordering within their parent
 
 ### Timestamps
 - All entities auto-track `createdAt` and `updatedAt`
-- Planned File Changes also track `completedAt` when marked complete
+- Quick Tasks and Planned File Changes also track `completedAt` when marked complete
 
 ### Type Safety
 - Full TypeScript coverage
@@ -179,27 +199,32 @@ DATABASE_URL=postgresql://user:password@host:port/database
 
 ## Best Practices for Claude
 
-### When Working with Repositories/Epics/Stories/Planned File Changes
+### When Working with Repositories/Epics/Stories/Quick Tasks/Planned File Changes
 1. Always create Repositories first (via UI only)
-2. Always create Epics before Stories (must specify repoId)
-3. Always create Stories before Planned File Changes (must specify storyId)
-4. Use appropriate status transitions (e.g., draft → ready → in_progress → review → completed)
-5. Use descriptive titles and acceptance criteria
-6. For Planned File Changes, always specify filePath relative to repo root
+2. **Formal workflow**: Always create Epics before Stories (must specify repoId), then create Stories before Planned File Changes (must specify storyId)
+3. **Quick workflow**: Create Quick Tasks directly under a Repository (must specify repoId), then create Planned File Changes (must specify quickTaskId)
+4. Use appropriate status transitions:
+   - Stories: draft → ready → in_progress → review → completed
+   - Quick Tasks: planned → in_progress → completed/cancelled
+5. Use descriptive titles and acceptance criteria (Stories only)
+6. For Planned File Changes, always specify filePath relative to repo root and either storyId OR quickTaskId (mutually exclusive)
 7. Use the Neo4j file graph (when available) to analyze dependencies before planning changes
+8. Choose Quick Tasks for small, isolated changes that don't require epic-level planning
 
 ### Database Operations
 - Use the MCP tools rather than raw SQL when possible
 - Remember cascade deletes when removing parent entities
 - Check for existing entities before creating duplicates
-- Use filtering parameters (status, epicId, storyId) to reduce data transfer
+- Use filtering parameters (status, epicId, storyId, repoId, quickTaskId) to reduce data transfer
 
 ### AI-First Workflow
-- Stories are the atomic unit of work - break features into Stories, not abstract tasks
-- Each Story should have Planned File Changes that specify exact files to modify
+- **Stories** are the atomic unit of work for formal planning - break features into Stories with acceptance criteria
+- **Quick Tasks** are ideal for AI agents to plan small, isolated changes without epic overhead
+- Each Story or Quick Task should have Planned File Changes that specify exact files to modify
 - Use `beforeSnapshot` and `afterSnapshot` to track expected changes
 - Leverage Neo4j file graph for impact analysis (understanding which files depend on changed files)
 - The `changeType` field helps AI agents understand the scope (create new, modify existing, or delete)
+- Quick Tasks are perfect for: bug fixes, small refactors, documentation updates, minor feature tweaks
 
 ### Code Modifications
 - Run `npm run db:generate` after schema changes
